@@ -1,0 +1,13 @@
+ffmpeg-python
+nltk
+openai-whisper
+pydub
+python-docx
+streamlit
+streamlit-audiorecorder
+openai
+groq
+pydub
+markdown
+pypandoc
+requests

@@ -1,0 +1,18 @@
+[theme]
+primaryColor="#5bbf83"
+backgroundColor="#ffffff"
+secondaryBackgroundColor="#ebebeb"
+textColor="#333333"
+
+[server]
+
+maxUploadSize = 2000
+
+
+[browser]
+gatherUsageStats = false
+
+
+[client]
+toolbarMode = "auto"
+
