@@ -6,7 +6,6 @@ import streamlit as st
 from openai import OpenAI
 from audiorecorder import audiorecorder
 
-
 # Python imports
 import os
 from os import environ
@@ -28,7 +27,6 @@ from styling_css import page_config, page_styling
 ### INITIAL VARIABLES
 # Creates folder if they don't exist
 os.makedirs("audio", exist_ok=True) # Where audio/video files are stored for transcription
-os.makedirs("text", exist_ok=True) # Where transcribed document are beeing stored
 os.makedirs("images", exist_ok=True) # Where images are beeing stored
 
 
@@ -51,8 +49,6 @@ if "llm_chat_model" not in st.session_state:
     st.session_state["llm_chat_model"] = "gpt-4o"
 if "audio_file" not in st.session_state:
     st.session_state["audio_file"] = False
-if "llm_processed" not in st.session_state:
-    st.session_state["llm_processed"] = False
 
 
 # Checking if uploaded or recorded audio file has been transcribed
@@ -104,6 +100,11 @@ def main():
     st.sidebar.markdown(
         "#"
         )
+    
+    st.sidebar.markdown(f"""
+            __Version:__ {c.app_version}  
+            __Senast uppdaterad:__ {c.app_updated_date}       
+                        """)
 
 
     ### ### ### ### ### ### ### ### ### ### ###
@@ -119,10 +120,7 @@ def main():
             Tryck på knappen __Spela in__ eller __Skriv text__ här under för att ge feedback. När du är 
             klar trycker du på __Stoppa__ eller __Skicka in__.
             """)
-        
-    with topcol2:
-
-        st.button("Ny feedback")
+              
 
     # Creating two main columns
     maincol1, maincol2 = st.columns([2, 2], gap="large")
@@ -132,8 +130,8 @@ def main():
 
         st.markdown("### Lämna feedback")
         
-        # Create three tabs for 'Record', 'Write text' and 'Upload'    
-        tab1, tab2, tab3 = st.tabs(["Spela in", "Skriv text", "Ladda upp ljudfil"])
+        # Create three tabs for 'Record' and 'Write text'    
+        tab1, tab2 = st.tabs(["Spela in", "Skriv text"])
 
         # TAB 1 - AUDIO RECORDER
 
@@ -176,12 +174,19 @@ def main():
                         st.success('Transkribering klar.')
 
                         st.balloons()
+
+                        # Delete both the original WAV file and the compressed MP3 file after transcription
+                        original_wav_file = f"audio/{audio_file_number}_recording.wav"
+                        compressed_mp3_file = st.session_state.file_name_converted
+
+                        if os.path.exists(original_wav_file):
+                            os.remove(original_wav_file)
+
+                        if os.path.exists(compressed_mp3_file):
+                            os.remove(compressed_mp3_file)
                         
                 
                 st.markdown("### Transkrinbering")
-                
-                if st.session_state.file_name_converted is not None:
-                    st.audio(st.session_state.file_name_converted, format='audio/wav')
                 
                 st.write(st.session_state.transcribed)
 
@@ -196,57 +201,6 @@ def main():
 
                 if feedback_text:
                     st.session_state.transcribed = feedback_text
-        
-        
-        # TAB 3 - FILE UPLOADER 
-
-        with tab3:
-            
-            uploaded_file = st.file_uploader(
-                "Ladda upp din ljud- eller videofil här",
-                type=["mp3", "wav", "flac", "mp4", "m4a", "aifc"],
-                help="Max 10GB stora filer", label_visibility="collapsed",
-                )
-
-
-            if uploaded_file:
-
-                # Checks if uploaded file has already been transcribed
-                current_file_hash = compute_file_hash(uploaded_file)
-
-                # If the uploaded file hash is different from the one in session state, reset the state
-                if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
-                    st.session_state.file_hash = current_file_hash
-                    
-                    if "transcribed" in st.session_state:
-                        del st.session_state.transcribed
-
-                
-                # If audio has not been transcribed
-                if "transcribed" not in st.session_state: 
-
-                    # Sends audio to be converted to mp3 and compressed
-                    with st.spinner('Din ljudfil är lite stor. Jag ska bara komprimera den lite först...'):
-                        st.session_state.file_name_converted = convert_to_mono_and_compress(uploaded_file, uploaded_file.name)
-                        st.success('Inspelning komprimerad och klar. Startar transkribering.')
-
-                # Transcribes audio with Whisper
-                    with st.spinner('Transkriberar. Det här kan ta ett litet tag beroende på hur lång inspelningen är...'):
-                        st.session_state.transcribed = transcribe_with_whisper_openai(st.session_state.file_name_converted, 
-                            uploaded_file.name,
-                            model_map_spoken_language[st.session_state["spoken_language"]])
-                        st.success('Transkribering klar.')
-
-                        st.balloons()
-
-                
-                st.markdown("### Ladda upp din bikt")
-                
-                if st.session_state.file_name_converted is not None:
-                    st.audio(st.session_state.file_name_converted, format='audio/wav')
-                
-                st.write(st.session_state.transcribed)
-
             
 
     with maincol2:
@@ -255,7 +209,7 @@ def main():
 
         if "transcribed" in st.session_state:
 
-            system_prompt = p.sammanstallning_bikt_1
+            system_prompt = p.feedback_prompt_1
             full_response = ""
 
             butcol1, butcol2, butcol3, butcol4 = st.columns(4, gap="small")
@@ -269,16 +223,12 @@ def main():
             
             if "llama" in llm_model:
                 full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
-                #st.session_state.llm_processed = True
+
             else:
                 full_response = process_text_openai(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
-                #st.session_state.llm_processed = True
-                #print(st.session_state.llm_processed)
 
-
-            with butcol2:
-                with st.popover("Redigera"):
-                    st.text_area("Redigera", full_response, height=400)
+        else:
+            st.write("När du talat eller skrivit in din feedback kommer du få en sammanställning här...")
 
 
 if __name__ == "__main__":

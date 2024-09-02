@@ -25,10 +25,6 @@ def transcribe_with_whisper_openai(file_name_converted, file_name, spoken_langua
 
 	transcribed_content = transcription
 
-	with open('text/' + file_name + '.txt', 'w') as file:
-		# Write the string to the file
-		file.write(transcribed_content)
-
 	return transcribed_content
 
 
