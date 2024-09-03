@@ -1,10 +1,14 @@
 
+# External imports
 import streamlit as st
 from groq import Groq
 from openai import OpenAI
+
+# Python imports
 import os
 from os import environ
 
+# Internal imports
 import config as c
 
 
@@ -71,6 +75,40 @@ def process_text_openai(model, temp, system_prompt, text):
                     
             message_placeholder.markdown(full_response)
             return full_response
+    
+
+
+def stream_text_openai(system_prompt, text, container):
+    print(system_prompt)
+    print(text)
+
+    if c.run_mode == "local":
+        client = OpenAI(api_key=st.secrets.openai_key)
+    else:
+        client = OpenAI(api_key=environ.get("openai_key"))
+
+    # Use the container to create a placeholder for streaming content
+    message_placeholder = container.empty()
+    full_response = ""
+
+    for response in client.chat.completions.create(
+        model = c.llm_model,
+        temperature = c.llm_temperature,
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+        ],
+        stream = True,
+    ):
+        if response.choices[0].delta.content:
+            full_response += str(response.choices[0].delta.content)
+        message_placeholder.write(full_response + "▌")  # Update the placeholder with the current content
+
+    message_placeholder.write(full_response)  # Final update to remove the cursor
+
+    print()
+    print(full_response)
+    return full_response
 
 
 

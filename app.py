@@ -5,6 +5,7 @@
 import streamlit as st
 from openai import OpenAI
 from audiorecorder import audiorecorder
+from supabase import create_client, Client
 
 # Python imports
 import os
@@ -29,6 +30,20 @@ from styling_css import page_config, page_styling
 os.makedirs("audio", exist_ok=True) # Where audio/video files are stored for transcription
 os.makedirs("images", exist_ok=True) # Where images are beeing stored
 
+# Initialize Supabase client
+if c.run_mode == "local":
+    SUPABASE_URL = st.secrets.supabase_db_url
+    SUPABASE_KEY = st.secrets.supabase_db_api
+else:
+    SUPABASE_URL =  environ.get("supabase_db_url")
+    SUPABASE_KEY =  environ.get("supabase_db_api")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Temp variables - to be removed
+
+dashboard_id = 1234
+
 
 ### STYLING - PAGE CONFIG
 page_config()
@@ -49,6 +64,9 @@ if "llm_chat_model" not in st.session_state:
     st.session_state["llm_chat_model"] = "gpt-4o"
 if "audio_file" not in st.session_state:
     st.session_state["audio_file"] = False
+if "feedback_submitted" not in st.session_state:
+    st.session_state["feedback_submitted"] = True
+    print(f"Init status should be true: {st.session_state["feedback_submitted"]}")
 
 
 # Checking if uploaded or recorded audio file has been transcribed
@@ -75,7 +93,17 @@ def main():
     ### ### ### ### ### ### ### ### ### ### ###
     ### SIDEBAR
 
-    st.sidebar.header("Inställningar")
+    # MENU
+
+    st.sidebar.markdown("## FeedbackFabriken")
+
+    st.sidebar.page_link("app.py", label="Feedback", icon=":material/home:")
+    st.sidebar.page_link("pages/10Dashboard.py", label="Dashboard", icon=":material/dashboard:")
+
+    st.sidebar.markdown("# ")
+    st.sidebar.markdown("# ")
+    st.sidebar.markdown("# ")
+    st.sidebar.markdown("### :material/settings: Inställningar")
     st.sidebar.markdown("")
 
     # Dropdown menu - choose source language of audio for Whisper model
@@ -128,10 +156,10 @@ def main():
 
     with maincol1:
 
-        st.markdown("### Lämna feedback")
+        st.markdown("### :material/quick_phrases: Lämna feedback")
         
         # Create three tabs for 'Record' and 'Write text'    
-        tab1, tab2 = st.tabs(["Spela in", "Skriv text"])
+        tab1, tab2 = st.tabs([":material/mic: Spela in", ":material/keyboard: Skriv text"])
 
         # TAB 1 - AUDIO RECORDER
 
@@ -186,7 +214,7 @@ def main():
                             os.remove(compressed_mp3_file)
                         
                 
-                st.markdown("### Transkrinbering")
+                st.markdown("### Transkribering")
                 
                 st.write(st.session_state.transcribed)
 
@@ -205,30 +233,62 @@ def main():
 
     with maincol2:
 
-        st.markdown("### Sammanställning")
+        full_response = ""
+
+        st.markdown("### :material/summarize: Sammanställning")
 
         if "transcribed" in st.session_state:
 
-            system_prompt = p.feedback_prompt_1
-            full_response = ""
+            if "processed_feedback" not in st.session_state:
 
-            butcol1, butcol2, butcol3, butcol4 = st.columns(4, gap="small")
+                system_prompt = p.feedback_prompt_1
+                full_response = ""
 
-            with butcol1:
-                with st.popover("Visa prompt"):
-                    st.write(system_prompt)
+                butcol1, butcol2, butcol3, butcol4 = st.columns(4, gap="small")
+
+                with butcol1:
+                    with st.popover("Visa prompt"):
+                        st.write(system_prompt)
+                    
+                llm_model = st.session_state["llm_chat_model"]
+                llm_temp = st.session_state["llm_temperature"]
                 
-            llm_model = st.session_state["llm_chat_model"]
-            llm_temp = st.session_state["llm_temperature"]
-            
-            if "llama" in llm_model:
-                full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
+                if "llama" in llm_model:
+                    full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
 
+                else:
+                    full_response = process_text_openai(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
+                
+                # Store the processed feedback in session state
+                st.session_state["processed_feedback"] = full_response
+                st.session_state["feedback_submitted"] = False
+            
             else:
-                full_response = process_text_openai(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
+                full_response = st.session_state["processed_feedback"]
 
         else:
             st.write("När du talat eller skrivit in din feedback kommer du få en sammanställning här...")
+        
+
+        # Send result to Supabase database
+        if st.session_state["feedback_submitted"] == False:
+           
+            if st.button('Skicka feedback', type='primary'):
+                data = {
+                    'dashboard_id': int(dashboard_id),
+                    'processed_text': st.session_state["processed_feedback"]
+                }
+                response = supabase.table('feedback').insert(data).execute()
+                
+                if response.data:
+                    st.session_state["feedback_submitted"] = True  # Mark feedback as submitted
+                    st.success('Dina tankar är delade med oss nu... Ladda om sidan om du vill skicka in ny feedback.', icon = ":material/thumb_up:")
+                    st.balloons()
+                    #st.rerun(scope="app")
+
+                else:
+                    st.error(f'Oooops. Nått gick fel: {response.error.message}')
+            
 
 
 if __name__ == "__main__":

@@ -11,3 +11,4 @@ pydub
 markdown
 pypandoc
 requests
+supabase

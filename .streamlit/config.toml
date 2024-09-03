@@ -15,4 +15,5 @@ gatherUsageStats = false
 
 [client]
 toolbarMode = "auto"
+showSidebarNavigation = false
 
