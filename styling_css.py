@@ -15,11 +15,13 @@ def page_styling():
     <style>
                 
     h1 {
-        padding: 0rem 0px 1rem;
+        padding: 0rem 0px 2rem;
+        font-size: 2.1rem;
     }
-          
-    .st-c7 {
-    height: 0rem;
+
+    img {
+    border-radius: 8px;
+    border: 1px solid #dadada;
     }
                 
     [data-baseweb="tab"] {
@@ -29,44 +31,20 @@ def page_styling():
     border-radius: 8px;
     }
                 
-    [alt="user avatar"] {
-        height: 2.8rem;
-        width: 2.8rem;
-        border-radius: 50%;
+    [data-baseweb="chackbox"] {
+    height: 0rem;
     }
                 
-    [alt="assistant avatar"] {
-        height: 2.8rem;
-        width: 2.8rem;
-        border-radius: 50%;
+    
+    [data-baseweb="tab-border"] {
+    display: none;
     }
                 
-    [aria-label="Chat message from user"] {
-        background: #ffffff;
-        padding: 10px;
-        border-radius: 0.5rem;
+                
+    [aria-roledescription="Calendar month"] {
+        background: #fbfbfb;
     }
                 
-    [aria-label="Chat message from assistant"] {
-        padding: 10px;
-    }
-        
-    .st-emotion {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: rgb(255 255 255);
-    }
-
-    [data-testid="block-container"] {
-        padding-left: 3rem;
-        padding-right: 3rem;
-        padding-top: 0rem;
-        padding-bottom: 0rem;
-        margin-bottom: -7rem;
-    }
                 
     .block-container {
         padding-top: 3rem;

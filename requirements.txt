@@ -4,6 +4,7 @@ openai-whisper
 pydub
 python-docx
 streamlit
+streamlit_extras
 streamlit-audiorecorder
 openai
 groq

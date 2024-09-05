@@ -12,7 +12,7 @@ from os import environ
 import config as c
 
 
-def process_text(model, temp, system_prompt, text):
+def process_text(system_prompt, text):
 
     if c.run_mode == "local":
         client = Groq(api_key = st.secrets.groq_key)
@@ -29,8 +29,8 @@ def process_text(model, temp, system_prompt, text):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text}
             ],
-            model=model,
-            temperature=temp,
+            model = c.llm_model,
+            temperature = c.llm_temperature,
             max_tokens=2048,
             top_p=1,
             stop=None,
@@ -48,7 +48,7 @@ def process_text(model, temp, system_prompt, text):
 
 
 
-def process_text_openai(model, temp, system_prompt, text):
+def process_text_openai(system_prompt, text):
 
     if c.run_mode == "local":
         client = OpenAI(api_key = st.secrets.openai_key)
@@ -61,9 +61,9 @@ def process_text_openai(model, temp, system_prompt, text):
             full_response = ""
 
             for response in client.chat.completions.create(
-                model=model,
-                temperature=temp,
-                messages=[
+                model = c.llm_model,
+                temperature = c.llm_temperature,
+                messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text}
                 ],
@@ -74,13 +74,41 @@ def process_text_openai(model, temp, system_prompt, text):
                     message_placeholder.markdown(full_response + "▌") 
                     
             message_placeholder.markdown(full_response)
+            
             return full_response
     
 
+def process_text_openai_recommendation(system_prompt, text):
+
+    if c.run_mode == "local":
+        client = OpenAI(api_key = st.secrets.openai_key)
+    else:
+        client = OpenAI(api_key = environ.get("openai_key"))
+    
+    with st.container(border = True):
+
+            message_placeholder = st.empty()
+            full_response = ""
+
+            for response in client.chat.completions.create(
+                model = c.llm_model,
+                temperature = c.llm_temperature,
+                messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text}
+                ],
+                stream=True,
+                ):
+                    if response.choices[0].delta.content:
+                        full_response += str(response.choices[0].delta.content)
+                    message_placeholder.markdown(full_response + "▌") 
+                    
+            message_placeholder.markdown(full_response)
+            
+            return full_response
+    
 
 def stream_text_openai(system_prompt, text, container):
-    print(system_prompt)
-    print(text)
 
     if c.run_mode == "local":
         client = OpenAI(api_key=st.secrets.openai_key)
@@ -99,39 +127,40 @@ def stream_text_openai(system_prompt, text, container):
             {"role": "user", "content": text}
         ],
         stream = True,
-    ):
+        ):
         if response.choices[0].delta.content:
             full_response += str(response.choices[0].delta.content)
         message_placeholder.write(full_response + "▌")  # Update the placeholder with the current content
 
     message_placeholder.write(full_response)  # Final update to remove the cursor
 
-    print()
-    print(full_response)
     return full_response
 
 
 
-def process_text_openai_image_prompt(model, temp, system_prompt, text):
+def process_text_openai_image_prompt(system_prompt, text, container):
 
     if c.run_mode == "local":
         client = OpenAI(api_key = st.secrets.openai_key)
     else:
         client = OpenAI(api_key = environ.get("openai_key"))
 
-    message_placeholder = st.empty()
+    message_placeholder = container.empty()
     full_response = ""
 
     for response in client.chat.completions.create(
-        model=model,
-        temperature=temp,
+        model = c.llm_model,
+        temperature = 0.8,
         messages=[
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": text}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
         ],
         stream=True,
         ):
+
+        with message_placeholder.status("Skapar prompt till bild..."):
             if response.choices[0].delta.content:
                 full_response += str(response.choices[0].delta.content)
+            st.write(full_response + "▌")  # Update the placeholder with the current content
 
     return full_response

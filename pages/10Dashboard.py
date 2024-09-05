@@ -12,11 +12,12 @@ from os import environ
 import random
 import time
 import hmac
-from datetime import datetime
+from datetime import datetime, date
 
 # Internal imports
 
-from llm import process_text_openai, stream_text_openai
+from llm import process_text_openai_recommendation, stream_text_openai, process_text_openai_image_prompt
+from image import download_image, create_image
 from styling_css import page_config, page_styling
 import config as c
 import prompts as p
@@ -49,9 +50,16 @@ if "dashboard_id" not in st.session_state:
 selected_dashboard = supabase.table('admin_dashboard').select('*').eq('dashboard_id', int(st.session_state["dashboard_id"])).execute().data[0]
 
 st.session_state.summarize_user_input = selected_dashboard.get('summarize_user_input', '')
-#st.session_state.questions_to_users = selected_dashboard.get('questions_to_users', '')
-#st.session_state.risks_to_users = selected_dashboard.get('risks_to_users', '')
-#st.session_state.ideas_to_users = selected_dashboard.get('ideas_to_users', '')
+st.session_state.summarize_leadership = selected_dashboard.get('summarize_leadership', '')
+st.session_state.summarize_leadership_recommendation = selected_dashboard.get('summarize_leadership_recommendation', '')
+st.session_state.summarize_work_environment = selected_dashboard.get('summarize_work_environment', '')
+st.session_state.summarize_work_environment_recommendation = selected_dashboard.get('summarize_work_environment_recommendation', '')
+st.session_state.summarize_equality = selected_dashboard.get('summarize_equality', '')
+st.session_state.summarize_equality_recommendation = selected_dashboard.get('summarize_equality_recommendation', '')
+st.session_state.summarize_misc = selected_dashboard.get('summarize_misc', '')
+st.session_state.summarize_misc_recommendation = selected_dashboard.get('summarize_misc_recommendation', '')
+st.session_state.summarize_ideas = selected_dashboard.get('summarize_ideas', '')
+st.session_state.image_url = selected_dashboard.get('image_url', '')
 
 
 ### MAIN APP ###########################
@@ -63,7 +71,7 @@ def main():
 
     # MENU
 
-    st.sidebar.markdown("## FeedbackFabriken")
+    st.sidebar.markdown("# FeedbackFabriken")
 
     st.sidebar.page_link("app.py", label="Feedback", icon=":material/home:")
     st.sidebar.page_link("pages/10Dashboard.py", label="Dashboard", icon=":material/dashboard:")
@@ -71,7 +79,8 @@ def main():
     st.sidebar.markdown("# ")
     st.sidebar.markdown("# ")
     st.sidebar.markdown("# ")
-    st.sidebar.markdown("### :material/settings: Inställningar")
+    st.sidebar.markdown("## :material/settings: Inställningar")
+    st.sidebar.divider()
 
     # Reset session state on page load
     #if "dashboard_id" not in st.session_state:
@@ -81,10 +90,39 @@ def main():
     #dashboards = supabase.table('admin_dashboard').select('dashboard_id').execute()
 
     # Live mode switch
+    st.sidebar.markdown("### :material/play_circle: Live mode")
+    st.sidebar.write("Om du vill ha realtidsuppdateringar aktiverar du live mode")
     live_mode = st.sidebar.checkbox('Live mode')
+    st.sidebar.divider()
+
+
+    def delete_feedback_and_reset_dashboard():
+        # Delete all rows in the 'feedback' table
+        supabase.table('feedback').delete().neq('id', 0).execute()  # Deletes all rows by selecting non-zero ids (workaround since supabase might not support blanket delete)
+
+        # Reset the 'participant_entries_ids' field in the 'admin_dashboard' table
+        supabase.table('admin_dashboard').update({'participant_entries_ids': []}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_user_input': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_leadership': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_work_environment': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_equality': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_misc': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_ideas': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_leadership_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_work_environment_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_equality_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'summarize_misc_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+        supabase.table('admin_dashboard').update({'image_url': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+
+        st.success('All feedback entries deleted and participant_entries_ids reset.')
+
+    # Add a button for deletion and reset
+    st.sidebar.markdown("### :material/warning: Varning")
+    if st.sidebar.button('Radera hela databasen'):
+        delete_feedback_and_reset_dashboard()
 
     st.sidebar.markdown(
-        "#"
+        "####"
         )
     
     st.sidebar.markdown(f"""
@@ -96,20 +134,184 @@ def main():
     ####################################
     ### MAIN PAGE
 
-    st.title(":material/dashboard: Dashboard")
+    topcol1, topcol2 = st.columns([14, 4], gap = "medium", vertical_alignment = "top")
 
-    col1, col2, col3 = st.columns([6, 6, 6], gap = "medium", vertical_alignment = "top")
+    with topcol1:
+
+        st.title(":material/dashboard: FeedbackFabriken | Dashboard")
+
+    with topcol2:
+
+        today = datetime.now()
+        first_of_month = today.replace(day=1)
+
+        date_picker = st.date_input(
+        "Välj datumintervall | Denna månad är förvald",
+        (first_of_month, today),  # Default range: first of current month to today
+        min_value=first_of_month,
+        max_value=today,
+        format="YYYY-MM-DD",
+        label_visibility = "collapsed"
+        )
+
+        #st.write(date_picker)
+
+    col1, col2, col3 = st.columns([7, 7, 4], gap = "medium", vertical_alignment = "top")
     
     # COL 1
 
     with col1:
 
-        col1_subcol1, col1_subcol2 = st.columns([2, 2], gap = "medium", vertical_alignment = "top")
+        # Container IMAGE
+        with st.container(border=False):
 
-        ### Container Workshop 
+            image_container = st.empty()
+
+            if 'image_url' in st.session_state:
+                image_container.image(st.session_state.image_url)
         
-        with col1_subcol1:
 
+        # Container "Läget på Indexator" - summarized imput
+        with st.container(border=False):
+
+            summarized_imput = st.empty()
+
+            if 'summarize_user_input' in st.session_state:
+                summarized_imput.markdown(st.session_state.summarize_user_input)
+
+    
+
+    # COL 2
+    
+    with col2:
+            
+        # Container "Ledarskap" - summarized input
+        with st.container(border=True):
+            
+            container_summarize_leadership = st.empty()
+
+            if 'summarize_leadership' in st.session_state:
+                container_summarize_leadership.markdown(st.session_state.summarize_leadership)
+                
+            if not live_mode:
+
+                def generate_recommendation():
+                    summarize_leadership_recommendation = stream_text_openai(p.prompt_generate_recommendation, st.session_state.summarize_leadership, container_summarize_leadership_recommendation)
+                    supabase.table('admin_dashboard').update({
+                                    'summarize_leadership_recommendation': summarize_leadership_recommendation
+                                }).eq('dashboard_id', st.session_state.dashboard_id).execute()
+                
+                with st.expander("Rekommendation", icon = ":material/help:"):
+                    st.button(":material/play_circle: Skapa rekommendation", key = "01", type = "primary", on_click = generate_recommendation)
+                    container_summarize_leadership_recommendation = st.empty()
+
+                    if 'summarize_leadership_recommendation' in st.session_state:
+                        container_summarize_leadership_recommendation.markdown(st.session_state.summarize_leadership_recommendation)
+            else:
+                st.write("")
+                    
+
+        
+        # Container "Arbetsmiljö" - summarized input
+        with st.container(border=True):
+
+            container_summarize_work_environment = st.empty()
+
+            if 'summarize_work_environment' in st.session_state:
+                container_summarize_work_environment.markdown(st.session_state.summarize_work_environment)
+            
+            if not live_mode:
+
+                def generate_recommendation():
+                    summarize_work_environment_recommendation = stream_text_openai(p.prompt_generate_recommendation, st.session_state.summarize_work_environment, container_summarize_work_environment_recommendation)
+                    supabase.table('admin_dashboard').update({
+                                    'summarize_work_environment_recommendation': summarize_work_environment_recommendation
+                                }).eq('dashboard_id', st.session_state.dashboard_id).execute()
+                
+                with st.expander("Rekommendation", icon = ":material/help:"):
+                    st.button(":material/play_circle: Skapa rekommendation", key = "02", type = "primary", on_click = generate_recommendation)
+                    container_summarize_work_environment_recommendation = st.empty()
+
+                    if 'summarize_work_environment_recommendation' in st.session_state:
+                        container_summarize_work_environment_recommendation.markdown(st.session_state.summarize_work_environment_recommendation)
+            else:
+                st.write("")
+
+
+        
+        # Container "Jämställdhet" - summarized input
+        with st.container(border=True):
+
+            container_summarize_equality = st.empty()
+
+            if 'summarize_equality' in st.session_state:
+                container_summarize_equality.markdown(st.session_state.summarize_equality)
+            
+            if not live_mode:
+
+                def generate_recommendation():
+                    summarize_equality_recommendation = stream_text_openai(p.prompt_generate_recommendation, st.session_state.summarize_equality, container_summarize_equality_recommendation)
+                    supabase.table('admin_dashboard').update({
+                                    'summarize_equality_recommendation': summarize_equality_recommendation
+                                }).eq('dashboard_id', st.session_state.dashboard_id).execute()
+                
+                with st.expander("Rekommendation", icon = ":material/help:"):
+                    st.button(":material/play_circle: Skapa rekommendation", key = "03", type = "primary", on_click = generate_recommendation)
+                    container_summarize_equality_recommendation = st.empty()
+
+                    if 'summarize_equality_recommendation' in st.session_state:
+                        container_summarize_equality_recommendation.markdown(st.session_state.summarize_equality_recommendation)
+            else:
+                st.write("")
+
+        
+        # Container "Övrigt" - summarized input
+        with st.container(border=True):
+
+            container_summarize_misc = st.empty()
+
+            if 'summarize_misc' in st.session_state:
+                container_summarize_misc.markdown(st.session_state.summarize_misc)
+
+            if not live_mode:
+
+                def generate_recommendation():
+                    summarize_misc_recommendation = stream_text_openai(p.prompt_generate_recommendation, st.session_state.summarize_misc, container_summarize_misc_recommendation)
+                    supabase.table('admin_dashboard').update({
+                                    'summarize_misc_recommendation': summarize_misc_recommendation
+                                }).eq('dashboard_id', st.session_state.dashboard_id).execute()
+                
+                with st.expander("Rekommendation", icon = ":material/help:"):
+                    st.button(":material/play_circle: Skapa rekommendation", key = "04", type = "primary", on_click = generate_recommendation)
+                    container_summarize_misc_recommendation = st.empty()
+
+                    if 'summarize_misc_recommendation' in st.session_state:
+                        container_summarize_misc_recommendation.markdown(st.session_state.summarize_misc_recommendation)
+            else:
+                st.write("")
+        
+
+        # Container "Idéer" - summarized input
+        with st.container(border=True):
+
+            container_summarize_ideas = st.empty()
+
+            if 'summarize_ideas' in st.session_state:
+                container_summarize_ideas.markdown(st.session_state.summarize_ideas)
+        
+            
+
+    
+    # COL 3
+    
+    with col3:
+
+        col3_subcol1, col3_subcol2 = st.columns([2, 2], gap = "small", vertical_alignment = "top")
+
+        
+        with col3_subcol1:
+
+            ### Container Workshop 
             container_dashboard_id = stylable_container(key = "column-1", css_styles = """
                     {
                     border: 0px solid rgba(255, 255, 255, 0.2);
@@ -119,13 +321,13 @@ def main():
                     padding: 1rem 1rem 1rem 1rem;                                       
                     }
                     """)
-            container_dashboard_id.caption("Dashboard ID")
+            container_dashboard_id.caption("ID")
 
             if 'dashboard_id' in st.session_state:
                 container_dashboard_id.markdown(f"# {st.session_state.dashboard_id}")
 
 
-        with col1_subcol2:
+        with col3_subcol2:
 
             # Container Number of user entries
             container_user_entries = stylable_container(key = "column-2", css_styles = """
@@ -137,85 +339,11 @@ def main():
                     padding: 1rem 1rem 1rem 1rem;                                       
                     }
                                                             """)
-            container_user_entries.caption("Antal svarande")
+            container_user_entries.caption("Svarande")
             entry_container = container_user_entries.empty()
 
-
-        # Container questions to users
-        #container_questions_to_users = stylable_container(key = "questions_to_users", css_styles = """
-        #        {
-        #        border: 0px solid rgba(255, 255, 255, 0.2);
-        #        background: rgb(17,77,110);
-        #        background: linear-gradient(90deg, rgba(17,77,110,1) 0%, rgba(26,117,167,1) 100%);
-        #        border-radius: 8px;
-        #        padding: 1rem 1rem 1rem 1rem;                                       
-        #        }
-        #                                                """)
-        #container_questions_to_users.markdown("###### Frågor att jobba med")
-        #questions_to_users_container = container_questions_to_users.empty()
-
-        #if 'questions_to_users' in st.session_state:
-        #    questions_to_users_container.markdown(st.session_state.questions_to_users)
-
-
-        # Container risks to users
-        #container_risks_to_users = stylable_container(key = "risks_to_users", css_styles = """
-        #        {
-        #        border: 0px solid rgba(255, 255, 255, 0.2);
-        #        background: rgb(17,77,110);
-        #        background: linear-gradient(90deg, rgba(17,77,110,1) 0%, rgba(26,117,167,1) 100%);
-        #        border-radius: 8px;
-        #        padding: 1rem 1rem 1rem 1rem;                                       
-        #        }
-        #                                                """)
-        #container_risks_to_users.markdown("###### Risker att jobba med")
-        #risks_to_users_container = container_risks_to_users.empty()
-
-        #if 'risks_to_users' in st.session_state:
-        #    risks_to_users_container.markdown(st.session_state.risks_to_users)
-
-
-        # Container ideas to users
-        #container_ideas_to_users = stylable_container(key = "ideas_to_users", css_styles = """
-        #        {
-        #        border: 0px solid rgba(255, 255, 255, 0.2);
-        #        background: rgb(17,77,110);
-        #        background: linear-gradient(90deg, rgba(17,77,110,1) 0%, rgba(26,117,167,1) 100%);
-        #        border-radius: 8px;
-        #        padding: 1rem 1rem 1rem 1rem;                                       
-        #        }
-        #                                                """)
-        #container_ideas_to_users.markdown("###### Idéer från LEA att jobba med")
-        #ideas_to_users_container = container_ideas_to_users.empty()
-
-        #if 'ideas_to_users' in st.session_state:
-        #    ideas_to_users_container.markdown(st.session_state.ideas_to_users)
-
-
-    
-    # COL 2
-    
-    with col2:
         
-        container_summarize = stylable_container(key = "summarize", css_styles = """
-                {
-                border: 0px solid rgba(255, 255, 255, 0.2);
-                padding: 0rem 0rem 0rem 0rem;                                       
-                }
-                """)
-
-        summarized_imput = container_summarize.empty()
-        summarized_imput.caption("Summering")
-
-        if 'summarize_user_input' in st.session_state:
-            summarized_imput.markdown(st.session_state.summarize_user_input)
-            
-
-    
-    # COL 3
-    
-    with col3:
-        
+        # Collected individual feedback
         with stylable_container(key = "column-3", css_styles = """
                 {
                 border: 0px solid rgba(255, 255, 255, 0.2);
@@ -293,23 +421,38 @@ def main():
                                     # Process and summarize user input
                                     user_input = collect_user_input()
                                     summarize_user_input = stream_text_openai(p.prompt_summarize, user_input, summarized_imput)
-                                    #questions_to_users = stream_text_openai(system_prompt_questions_to_users, user_input, questions_to_users_container)
-                                    #risks_to_users = stream_text_openai(system_prompt_risks_to_users, user_input, risks_to_users_container)
-                                    #ideas_to_users = stream_text_openai(system_prompt_ideas_to_users, user_input, ideas_to_users_container)
+                                    summarize_leadership = stream_text_openai(p.prompt_summarize_leadership, user_input, container_summarize_leadership)
+                                    summarize_work_environment = stream_text_openai(p.prompt_summarize_work_environment, user_input, container_summarize_work_environment)
+                                    summarize_equality = stream_text_openai(p.prompt_summarize_equality, user_input, container_summarize_equality)
+                                    summarize_misc = stream_text_openai(p.prompt_summarize_misc, user_input, container_summarize_misc)
+                                    summarize_ideas = stream_text_openai(p.prompt_summarize_ideas, user_input, container_summarize_ideas)
+
+                                    
+                                    image_prompt_to_dalle = process_text_openai_image_prompt(p.image_prompt, summarize_user_input, image_container)
+                                    print(image_prompt_to_dalle)
+                                    
+                                    create_image_and_get_url = create_image(image_prompt_to_dalle, image_container)
+                                    print(create_image_and_get_url)
+                                    
+                                    image_save_path_and_download = download_image(create_image_and_get_url, image_container)
+                                    print(image_save_path_and_download)
                                     
                                     # Update the workshop_admin table with the latest values
                                     supabase.table('admin_dashboard').update({
-                                        'summarize_user_input': summarize_user_input
-                                        #'questions_to_users': questions_to_users,
-                                        #'risks_to_users': risks_to_users,
-                                        #'ideas_to_users': ideas_to_users
+                                        'summarize_user_input': summarize_user_input,
+                                        'summarize_leadership': summarize_leadership,
+                                        'summarize_work_environment': summarize_work_environment,
+                                        'summarize_equality': summarize_equality,
+                                        'summarize_misc': summarize_misc,
+                                        'summarize_ideas': summarize_ideas,
+                                        'image_url': image_save_path_and_download
                                     }).eq('dashboard_id', st.session_state.dashboard_id).execute()
 
                                     count_number_of_entries += 1
                                 
                                 entry_id = record['id']
                                 created_at = datetime.fromisoformat(record['created_at'])
-                                formatted_time = created_at.strftime('%H:%M')
+                                formatted_time = created_at.strftime('%Y-%m-%d | %H:%M')
                                 
                                 with st.expander(f"{entry_id} - Mottaget {formatted_time}"):
                                     st.write(f"{record['processed_text']}")

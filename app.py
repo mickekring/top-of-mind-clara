@@ -66,7 +66,6 @@ if "audio_file" not in st.session_state:
     st.session_state["audio_file"] = False
 if "feedback_submitted" not in st.session_state:
     st.session_state["feedback_submitted"] = True
-    print(f"Init status should be true: {st.session_state["feedback_submitted"]}")
 
 
 # Checking if uploaded or recorded audio file has been transcribed
@@ -143,8 +142,9 @@ def main():
 
     with topcol1:
 
+        st.title(":material/dashboard: FeedbackFabriken")
+
         st.markdown(f"""
-            # {c.app_name}
             Tryck på knappen __Spela in__ eller __Skriv text__ här under för att ge feedback. När du är 
             klar trycker du på __Stoppa__ eller __Skicka in__.
             """)
@@ -156,7 +156,7 @@ def main():
 
     with maincol1:
 
-        st.markdown("### :material/quick_phrases: Lämna feedback")
+        st.markdown("#### :material/quick_phrases: Lämna feedback")
         
         # Create three tabs for 'Record' and 'Write text'    
         tab1, tab2 = st.tabs([":material/mic: Spela in", ":material/keyboard: Skriv text"])
@@ -171,7 +171,6 @@ def main():
             if len(audio) > 0:
 
                 audio_file_number = random.randint(1000000, 9000000)
-                print(audio_file_number)
 
                 # To save audio to a file, use pydub export method
                 audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
@@ -235,7 +234,7 @@ def main():
 
         full_response = ""
 
-        st.markdown("### :material/summarize: Sammanställning")
+        st.markdown("#### :material/summarize: Sammanställning")
 
         if "transcribed" in st.session_state:
 
@@ -257,7 +256,7 @@ def main():
                     full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
 
                 else:
-                    full_response = process_text_openai(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
+                    full_response = process_text_openai(system_prompt, st.session_state.transcribed)
                 
                 # Store the processed feedback in session state
                 st.session_state["processed_feedback"] = full_response
