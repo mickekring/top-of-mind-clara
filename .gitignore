@@ -4,6 +4,5 @@
 Dockerfile
 /__pycache__
 /audio
-/images
 /static
 /text
