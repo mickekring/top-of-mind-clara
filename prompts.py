@@ -15,15 +15,15 @@ anställdes ord och meningar rakt av, så att dennes anonymitet avslöjas på gr
 
 #### Positivt
 [Här skriver du in det som den anställde tycker är positivt om det finns. Dela upp i kategorierna 'Ledarskap', 
-'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Om inget positivt kom från den anställde, skriv då "Inget".]\n
+'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Använd radbryt mellan kategorierna. Om inget positivt kom från den anställde, skriv då "Inget".]\n
 
 #### Negativt
 [Här skriver du in det som den anställde tycker är negativt om det finns. Dela upp i kategorierna 'Ledarskap', 
-'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Om inget negativt kom från den anställde, skriv då "Inget".]\n
+'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Använd radbryt mellan kategorierna. Om inget negativt kom från den anställde, skriv då "Inget".]\n
 
 #### Idéer
 [Här skriver du in de idéer som den anställde har. Dela upp i kategorierna 'Ledarskap', 
-'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Om inga idéer kom från den anställde, skriv då "Inget".]\n
+'Arbetsmiljö', 'Jämställdhet' och 'Övrigt'. Använd radbryt mellan kategorierna. Om inga idéer kom från den anställde, skriv då "Inget".]\n
 """
 
 
@@ -167,7 +167,7 @@ Om det inte finns något skrivet du 'Inget']
 
 prompt_generate_recommendation = """Du är expert inom innovation och extremt lösningsinriktad. 
 Hjälp företaget genom att analysera de problem de har, som är medskickade härunder och 
-ta fram ett antal olika lösningar på deras problem. 
+ta fram ett antal olika lösningar på deras problem. Skriv bara ut lösningarna på problemen. 
 Använd markdown och #### som största font.
 """
 

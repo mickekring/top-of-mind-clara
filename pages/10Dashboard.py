@@ -18,7 +18,7 @@ from datetime import datetime, date
 
 from llm import process_text_openai_recommendation, stream_text_openai, process_text_openai_image_prompt
 from image import download_image, create_image
-from styling_css import page_config, page_styling
+from styling_css import page_config, page_styling_dashboard
 import config as c
 import prompts as p
 
@@ -38,7 +38,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ### STYLING - PAGE CONFIG
 page_config()
-page_styling()
+page_styling_dashboard()
 
 
 ### SESSION STATES
@@ -113,6 +113,7 @@ def main():
         supabase.table('admin_dashboard').update({'summarize_equality_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
         supabase.table('admin_dashboard').update({'summarize_misc_recommendation': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
         supabase.table('admin_dashboard').update({'image_url': ""}).eq('dashboard_id', st.session_state.dashboard_id).execute()
+
 
         st.success('All feedback entries deleted and participant_entries_ids reset.')
 
@@ -410,6 +411,9 @@ def main():
                 
                     if records:
                         with feedback.container():
+                            
+                            new_entries = False
+
                             for record in reversed(records):
                                 if not record.get('collected'):
                                     st.toast('Hooray! Nytt bidrag!', icon='🎉')
@@ -417,7 +421,15 @@ def main():
                                     # Update the record in the database
                                     supabase.table('feedback').update({'collected': "Done"}).eq('id', record['id']).execute()
                                     record['collected'] = "Done"  # Update the local record
+
+                                    count_number_of_entries += 1
+
+                                    new_entries = True
+                            
+                            for record in reversed(records):
+                                if new_entries == True:
                                     
+                                        
                                     # Process and summarize user input
                                     user_input = collect_user_input()
                                     summarize_user_input = stream_text_openai(p.prompt_summarize, user_input, summarized_imput)
@@ -426,16 +438,10 @@ def main():
                                     summarize_equality = stream_text_openai(p.prompt_summarize_equality, user_input, container_summarize_equality)
                                     summarize_misc = stream_text_openai(p.prompt_summarize_misc, user_input, container_summarize_misc)
                                     summarize_ideas = stream_text_openai(p.prompt_summarize_ideas, user_input, container_summarize_ideas)
-
                                     
                                     image_prompt_to_dalle = process_text_openai_image_prompt(p.image_prompt, summarize_user_input, image_container)
-                                    print(image_prompt_to_dalle)
-                                    
                                     create_image_and_get_url = create_image(image_prompt_to_dalle, image_container)
-                                    print(create_image_and_get_url)
-                                    
                                     image_save_path_and_download = download_image(create_image_and_get_url, image_container)
-                                    print(image_save_path_and_download)
                                     
                                     # Update the workshop_admin table with the latest values
                                     supabase.table('admin_dashboard').update({
@@ -446,17 +452,19 @@ def main():
                                         'summarize_misc': summarize_misc,
                                         'summarize_ideas': summarize_ideas,
                                         'image_url': image_save_path_and_download
-                                    }).eq('dashboard_id', st.session_state.dashboard_id).execute()
+                                    }).eq('dashboard_id', st.session_state.dashboard_id).execute() 
 
-                                    count_number_of_entries += 1
-                                
-                                entry_id = record['id']
-                                created_at = datetime.fromisoformat(record['created_at'])
-                                formatted_time = created_at.strftime('%Y-%m-%d | %H:%M')
-                                
-                                with st.expander(f"{entry_id} - Mottaget {formatted_time}"):
-                                    st.write(f"{record['processed_text']}")
-                                    count_number_of_entries += 1
+                                    new_entries = False
+
+                                else:
+                            
+                                    entry_id = record['id']
+                                    created_at = datetime.fromisoformat(record['created_at'])
+                                    formatted_time = created_at.strftime('%Y-%m-%d | %H:%M')
+                                    
+                                    with st.expander(f"{entry_id} - Mottaget {formatted_time}"):
+                                        st.write(f"{record['processed_text']}")
+                                        count_number_of_entries += 1
                     
                     entry_container.markdown(f"# {count_number_of_entries}")
                     time.sleep(c.loop_time)

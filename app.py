@@ -143,91 +143,109 @@ def main():
     with topcol1:
 
         st.title(":material/dashboard: FeedbackFabriken")
-
-        st.markdown(f"""
-            Tryck på knappen __Spela in__ eller __Skriv text__ här under för att ge feedback. När du är 
-            klar trycker du på __Stoppa__ eller __Skicka in__.
-            """)
               
 
     # Creating two main columns
     maincol1, maincol2 = st.columns([2, 2], gap="large")
 
-
+    
     with maincol1:
 
-        st.markdown("#### :material/quick_phrases: Lämna feedback")
-        
-        # Create three tabs for 'Record' and 'Write text'    
-        tab1, tab2 = st.tabs([":material/mic: Spela in", ":material/keyboard: Skriv text"])
+        with st.container(border = True):
 
-        # TAB 1 - AUDIO RECORDER
+            st.markdown(f"""Tack för att du vill dela med dig av vad du tycker, tänker och känner!  
+                    Allt du skickar in är anonymt.  
+            """)
+            st.markdown(f"""  
+            Välj om du vill __Tala__ eller __Skriva__ här under för att ge feedback.
+            """)
 
-        with tab1:
+        with st.expander("Hjälp och tips"):
+            st.markdown(f"""#### Tips på hur du kan ge feedback
+- Försök att vara så specifik som du kan. Om det är något som du gillar eller inte gillar, 
+berätta vad det är och varför.  
+- Kom gärna med förslag. Om du exempelvis har något som du inte tycker fungerar, kom gärna med ett 
+förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet oftast mest och bäst.
+""")
 
-            # Creates the audio recorder
-            audio = audiorecorder(start_prompt="Spela in", stop_prompt="Stoppa", pause_prompt="", key=None)
+        with st.container(border = True):
 
-            if len(audio) > 0:
+            st.markdown("#### :material/send: Lämna feedback")
+            
+            # Create three tabs for 'Record' and 'Write text'    
+            tab1, tab2 = st.tabs([":material/mic: Tala", ":material/keyboard: Skriv"])
 
-                audio_file_number = random.randint(1000000, 9000000)
+            # TAB 1 - AUDIO RECORDER
 
-                # To save audio to a file, use pydub export method
-                audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
+            with tab1:
 
-                # Open the saved audio file and compute its hash
-                with open(f"audio/{audio_file_number}_recording.wav", 'rb') as file:
-                    current_file_hash = compute_file_hash(file)
+                st.markdown("Klicka på knappen __Spela in__ och prata. När du är klar klickar du på __Stoppa__.")
 
-                # If the uploaded file hash is different from the one in session state, reset the state
-                if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
-                    st.session_state.file_hash = current_file_hash
-                    
-                    if "transcribed" in st.session_state:
-                        del st.session_state.transcribed
+                # Creates the audio recorder
+                audio = audiorecorder(start_prompt="Spela in", stop_prompt="Stoppa", pause_prompt="", key=None)
 
-                if "transcribed" not in st.session_state:
-                
-                    with st.spinner('Din ljudfil är lite stor. Jag ska bara komprimera den lite först...'):
-                        st.session_state.file_name_converted = convert_to_mono_and_compress(f"audio/{audio_file_number}_recording.wav", f"{audio_file_number}_recording")
-                        st.success('Inspelning komprimerad och klar. Startar transkribering.')
+                if len(audio) > 0:
 
-                    with st.spinner('Transkriberar. Det här kan ta ett litet tag beroende på hur lång inspelningen är...'):
-                        st.session_state.transcribed = transcribe_with_whisper_openai(st.session_state.file_name_converted, 
-                            f"{audio_file_number}_recording.mp3",
-                            model_map_spoken_language[st.session_state["spoken_language"]]
-                            )
+                    audio_file_number = random.randint(1000000, 9000000)
 
-                        st.success('Transkribering klar.')
+                    # To save audio to a file, use pydub export method
+                    audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
 
-                        st.balloons()
+                    # Open the saved audio file and compute its hash
+                    with open(f"audio/{audio_file_number}_recording.wav", 'rb') as file:
+                        current_file_hash = compute_file_hash(file)
 
-                        # Delete both the original WAV file and the compressed MP3 file after transcription
-                        original_wav_file = f"audio/{audio_file_number}_recording.wav"
-                        compressed_mp3_file = st.session_state.file_name_converted
-
-                        if os.path.exists(original_wav_file):
-                            os.remove(original_wav_file)
-
-                        if os.path.exists(compressed_mp3_file):
-                            os.remove(compressed_mp3_file)
+                    # If the uploaded file hash is different from the one in session state, reset the state
+                    if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
+                        st.session_state.file_hash = current_file_hash
                         
-                
-                st.markdown("### Transkribering")
-                
-                st.write(st.session_state.transcribed)
+                        if "transcribed" in st.session_state:
+                            del st.session_state.transcribed
+
+                    if "transcribed" not in st.session_state:
+                    
+                        with st.spinner('Din ljudfil är lite stor. Jag ska bara komprimera den lite först...'):
+                            st.session_state.file_name_converted = convert_to_mono_and_compress(f"audio/{audio_file_number}_recording.wav", f"{audio_file_number}_recording")
+                            st.success('Inspelning komprimerad och klar. Startar transkribering.')
+
+                        with st.spinner('Transkriberar. Det här kan ta ett litet tag beroende på hur lång inspelningen är...'):
+                            st.session_state.transcribed = transcribe_with_whisper_openai(st.session_state.file_name_converted, 
+                                f"{audio_file_number}_recording.mp3",
+                                model_map_spoken_language[st.session_state["spoken_language"]]
+                                )
+
+                            st.success('Transkribering klar.')
+
+                            st.balloons()
+
+                            # Delete both the original WAV file and the compressed MP3 file after transcription
+                            original_wav_file = f"audio/{audio_file_number}_recording.wav"
+                            compressed_mp3_file = st.session_state.file_name_converted
+
+                            if os.path.exists(original_wav_file):
+                                os.remove(original_wav_file)
+
+                            if os.path.exists(compressed_mp3_file):
+                                os.remove(compressed_mp3_file)
+                            
+                    
+                    st.markdown("#### :material/summarize: Du sa:")
+                    
+                    st.write(st.session_state.transcribed)
 
 
-        # TAB 2 - TEXT INPUT AREA
+            # TAB 2 - TEXT INPUT AREA
 
-        with tab2:
+            with tab2:
 
-            with st.form("send_feedback"):
-                feedback_text = st.text_area("Feedback", label_visibility="hidden")
-                st.form_submit_button('Skicka feedback')
+                st.markdown("Skriv i det gråa fältet nedan. När du är klar klickar du på __Skicka__.")
 
-                if feedback_text:
-                    st.session_state.transcribed = feedback_text
+                with st.form("send_feedback"):
+                    feedback_text = st.text_area("Feedback", label_visibility="hidden")
+                    st.form_submit_button('Skicka')
+
+                    if feedback_text:
+                        st.session_state.transcribed = feedback_text
             
 
     with maincol2:
