@@ -44,7 +44,7 @@ page_styling_dashboard()
 ### SESSION STATES
 
 if "dashboard_id" not in st.session_state:
-    st.session_state["dashboard_id"] = 1234
+    st.session_state["dashboard_id"] = c.dashboard_id
     dashboard_id = st.session_state["dashboard_id"]
 
 selected_dashboard = supabase.table('admin_dashboard').select('*').eq('dashboard_id', int(st.session_state["dashboard_id"])).execute().data[0]
@@ -168,8 +168,11 @@ def main():
 
             image_container = st.empty()
 
-            if 'image_url' in st.session_state:
+            if 'image_url' in st.session_state and st.session_state.image_url:
                 image_container.image(st.session_state.image_url)
+            
+            else:
+                image_container.write("")  # Or handle the case where no image is present
         
 
         # Container "Läget på Indexator" - summarized imput

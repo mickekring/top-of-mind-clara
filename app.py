@@ -42,7 +42,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Temp variables - to be removed
 
-dashboard_id = 1234
+dashboard_id = c.dashboard_id
 
 
 ### STYLING - PAGE CONFIG
