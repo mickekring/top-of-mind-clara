@@ -15,20 +15,21 @@ from sys import platform
 import hashlib
 import random
 import hmac
+from concurrent.futures import ThreadPoolExecutor
 
 # Imternal imports
-from functions import convert_to_mono_and_compress
 from transcribe import transcribe_with_whisper_openai
 from llm import process_text, process_text_openai
 import prompts as p
 import config as c
 from styling_css import page_config, page_styling
+from split_audio import split_audio_to_chunks
 
 
 ### INITIAL VARIABLES
-# Creates folder if they don't exist
-os.makedirs("audio", exist_ok=True) # Where audio/video files are stored for transcription
-os.makedirs("images", exist_ok=True) # Where images are beeing stored
+os.makedirs("audio", exist_ok=True)
+os.makedirs("audio_chunks", exist_ok=True)
+os.makedirs("text", exist_ok=True)
 
 # Initialize Supabase client
 if c.run_mode == "local":
@@ -40,7 +41,6 @@ else:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Temp variables - to be removed
 
 dashboard_id = c.dashboard_id
 
@@ -66,6 +66,9 @@ if "audio_file" not in st.session_state:
     st.session_state["audio_file"] = False
 if "feedback_submitted" not in st.session_state:
     st.session_state["feedback_submitted"] = True
+
+if 'system_prompt' not in st.session_state:
+    st.session_state.system_prompt = p.prompt_help_bot
 
 
 # Checking if uploaded or recorded audio file has been transcribed
@@ -94,7 +97,7 @@ def main():
 
     # MENU
 
-    st.sidebar.markdown("## FeedbackFabriken")
+    st.sidebar.markdown(f"## {c.app_name}")
 
     st.sidebar.page_link("app.py", label="Feedback", icon=":material/home:")
     st.sidebar.page_link("pages/10Dashboard.py", label="Dashboard", icon=":material/dashboard:")
@@ -142,7 +145,7 @@ def main():
 
     with topcol1:
 
-        st.title(":material/dashboard: FeedbackFabriken")
+        st.markdown(f"## :material/dashboard: {c.app_name}")
               
 
     # Creating two main columns
@@ -151,7 +154,7 @@ def main():
     
     with maincol1:
 
-        with st.container(border = True):
+        with st.container(border = False):
 
             st.markdown(f"""Tack för att du vill dela med dig av vad du tycker, tänker och känner!  
                     Allt du skickar in är anonymt.  
@@ -160,13 +163,6 @@ def main():
             Välj om du vill __Tala__ eller __Skriva__ här under för att ge feedback.
             """)
 
-        with st.expander("Hjälp och tips"):
-            st.markdown(f"""#### Tips på hur du kan ge feedback
-- Försök att vara så specifik som du kan. Om det är något som du gillar eller inte gillar, 
-berätta vad det är och varför.  
-- Kom gärna med förslag. Om du exempelvis har något som du inte tycker fungerar, kom gärna med ett 
-förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet oftast mest och bäst.
-""")
 
         with st.container(border = True):
 
@@ -203,33 +199,29 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                             del st.session_state.transcribed
 
                     if "transcribed" not in st.session_state:
+
+                        with st.status('Delar upp ljudfilen i mindre bitar...'):
+                            chunk_paths = split_audio_to_chunks(f"audio/{audio_file_number}_recording.wav")
+
+                        # Transcribe chunks in parallel
+                        with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
+                            with ThreadPoolExecutor() as executor:
+                                # Open each chunk as a file object and pass it to transcribe_with_whisper_openai
+                                transcriptions = list(executor.map(
+                                    lambda chunk: transcribe_with_whisper_openai(open(chunk, "rb"), os.path.basename(chunk)), 
+                                    chunk_paths
+                                )) 
+                                # Combine all the transcriptions into one
+                                st.session_state.transcribed = "\n".join(transcriptions)
+
+                    # Delete both the original WAV file and the compressed MP3 file after transcription
+                    original_wav_file = f"audio/{audio_file_number}_recording.wav"
+                    #compressed_mp3_file = st.session_state.file_name_converted
+
+                    if os.path.exists(original_wav_file):
+                        os.remove(original_wav_file)        
                     
-                        with st.spinner('Din ljudfil är lite stor. Jag ska bara komprimera den lite först...'):
-                            st.session_state.file_name_converted = convert_to_mono_and_compress(f"audio/{audio_file_number}_recording.wav", f"{audio_file_number}_recording")
-                            st.success('Inspelning komprimerad och klar. Startar transkribering.')
-
-                        with st.spinner('Transkriberar. Det här kan ta ett litet tag beroende på hur lång inspelningen är...'):
-                            st.session_state.transcribed = transcribe_with_whisper_openai(st.session_state.file_name_converted, 
-                                f"{audio_file_number}_recording.mp3",
-                                model_map_spoken_language[st.session_state["spoken_language"]]
-                                )
-
-                            st.success('Transkribering klar.')
-
-                            st.balloons()
-
-                            # Delete both the original WAV file and the compressed MP3 file after transcription
-                            original_wav_file = f"audio/{audio_file_number}_recording.wav"
-                            compressed_mp3_file = st.session_state.file_name_converted
-
-                            if os.path.exists(original_wav_file):
-                                os.remove(original_wav_file)
-
-                            if os.path.exists(compressed_mp3_file):
-                                os.remove(compressed_mp3_file)
-                            
-                    
-                    st.markdown("#### :material/summarize: Du sa:")
+                    st.markdown("##### :material/summarize: Du sa:")
                     
                     st.write(st.session_state.transcribed)
 
@@ -246,6 +238,76 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
 
                     if feedback_text:
                         st.session_state.transcribed = feedback_text
+
+        
+        with st.expander(":material/lightbulb: Hjälp och tips"):
+            st.markdown(f"""#### Tips på hur du kan ge feedback
+- Försök att vara så specifik som du kan. Om det är något som du gillar eller inte gillar, 
+berätta vad det är och varför.  
+- Kom gärna med förslag. Om du exempelvis har något som du inte tycker fungerar, kom gärna med ett 
+förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet oftast mest och bäst.
+""")
+        
+        with st.expander(":material/forum: Chatta med Clara"):
+
+            chat = st.container(height=400, border=False)
+
+            if st.button("Rensa chat", type="secondary"):
+                if "messages" in st.session_state.keys(): # Initialize the chat message history
+                    st.session_state.messages = [
+                        {"role": "assistant", "content": '''
+                            Hej! Jag är Clara, en AI-chatbot. Hur kan jag hjälpa dig?
+                        '''}
+                ]
+
+            if "messages" not in st.session_state:
+                st.session_state["messages"] = [{"role": "assistant", "content": "Hej! Jag är Clara, en AI-chatbot. Hur kan jag hjälpa dig?"}]
+
+            for message in st.session_state.messages:
+                with chat.chat_message(message["role"]):
+                    # Check if the content is an image URL
+                    if message["content"].startswith("http"):
+                        st.image(message["content"])
+                    else:
+                        st.markdown(message["content"])
+
+            # Define your system prompt here
+            system_prompt = st.session_state.system_prompt
+
+            if prompt := st.chat_input("Vad vill du prata om?"):
+                
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                with chat.chat_message("user"):
+                    st.markdown(prompt)
+
+                with chat.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = ""
+
+                    # Preprocess messages to include the system prompt
+                    processed_messages = []
+                    for m in st.session_state.messages:
+                        # Prepend system prompt to the user's message
+                        if m["role"] == "user":
+                            content_with_prompt = system_prompt + " " + m["content"]
+                            processed_messages.append({"role": m["role"], "content": content_with_prompt})
+                        else:
+                            processed_messages.append(m)
+
+                    client = OpenAI(api_key = st.secrets.openai_key)
+            
+                    for response in client.chat.completions.create(
+                        model = st.session_state["llm_chat_model"],
+                        temperature = st.session_state["llm_temperature"],
+                        messages = processed_messages,
+                        stream = True,
+                    ):
+                        if response.choices[0].delta.content:
+                            full_response += str(response.choices[0].delta.content)
+                        message_placeholder.markdown(full_response + "▌")  
+                            
+                    message_placeholder.markdown(full_response)
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
             
 
     with maincol2:
@@ -301,7 +363,6 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                     st.session_state["feedback_submitted"] = True  # Mark feedback as submitted
                     st.success('Dina tankar är delade med oss nu... Ladda om sidan om du vill skicka in ny feedback.', icon = ":material/thumb_up:")
                     st.balloons()
-                    #st.rerun(scope="app")
 
                 else:
                     st.error(f'Oooops. Nått gick fel: {response.error.message}')

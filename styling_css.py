@@ -1,20 +1,21 @@
 
 import streamlit as st
+import config as c
 
 
 def page_config():
     st.set_page_config(
-        page_title="FeedbackFabriken",
-        layout="wide",
-        page_icon="❤️",
-        initial_sidebar_state="collapsed")
+        page_title = c.app_name,
+        layout = "wide",
+        page_icon = ":material/dashboard:",
+        initial_sidebar_state = "collapsed")
 
 
 def page_styling():
     st.markdown("""
     <style>
                 
-    h1 {
+    h1, h2 {
         padding: 0rem 0px 2rem;
         font-size: 2.1rem;
     }
@@ -49,16 +50,13 @@ def page_styling():
     height: 0rem;
     }
                 
-    
     [data-baseweb="tab-border"] {
     display: none;
-    }
-                
+    }        
                 
     [aria-roledescription="Calendar month"] {
         background: #fbfbfb;
-    }
-                
+    }           
                 
     .block-container {
         padding-top: 3rem;
@@ -73,7 +71,7 @@ def page_styling_dashboard():
     st.markdown("""
     <style>
                 
-    h1 {
+    h1, h2 {
         padding: 0rem 0px 2rem;
         font-size: 2.1rem;
     }
@@ -99,22 +97,17 @@ def page_styling_dashboard():
     background: #5bbf83 !important;
     }
                 
-
-                
     [data-baseweb="chackbox"] {
     height: 0rem;
-    }
-                
+    }           
     
     [data-baseweb="tab-border"] {
     display: none;
-    }
-                
+    }           
                 
     [aria-roledescription="Calendar month"] {
         background: #fbfbfb;
-    }
-                
+    }           
                 
     .block-container {
         padding-top: 3rem;

@@ -14,18 +14,20 @@ else:
 
 # Whisper OpenAI
 
-def transcribe_with_whisper_openai(file_name_converted, file_name, spoken_language):
+def transcribe_with_whisper_openai(file, file_name):
 
-	audio_file = open(file_name_converted, "rb")
+	#audio_file = open(file, "rb")
 	transcription = client.audio.transcriptions.create(
 		model = "whisper-1", 
-		file = audio_file, 
-		response_format = "text"
+		file = file, 
+		response_format = "text",
+		prompt = ""
 	)
 
 	transcribed_content = transcription
 
+	with open('text/' + file_name + '.txt', 'w') as file:
+		# Write the string to the file
+		file.write(transcribed_content)
+
 	return transcribed_content
-
-
-

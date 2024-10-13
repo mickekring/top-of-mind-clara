@@ -3,6 +3,8 @@
 .streamlit/secrets.toml
 Dockerfile
 /__pycache__
-/audio
+/audio/*.wav
 /static
-/text
+/text/out*
+/audio_chunks/out*
+

@@ -71,7 +71,7 @@ def main():
 
     # MENU
 
-    st.sidebar.markdown("# FeedbackFabriken")
+    st.sidebar.markdown(f"# {c.app_name}")
 
     st.sidebar.page_link("app.py", label="Feedback", icon=":material/home:")
     st.sidebar.page_link("pages/10Dashboard.py", label="Dashboard", icon=":material/dashboard:")
@@ -83,8 +83,8 @@ def main():
     st.sidebar.divider()
 
     # Reset session state on page load
-    #if "dashboard_id" not in st.session_state:
-    #    st.session_state["dashboard_id"] = "1234"
+    if "dashboard_id" not in st.session_state:
+        st.session_state["dashboard_id"] = c.dashboard_id
 
     # Fetch dashboards
     #dashboards = supabase.table('admin_dashboard').select('dashboard_id').execute()
@@ -119,8 +119,8 @@ def main():
 
     # Add a button for deletion and reset
     st.sidebar.markdown("### :material/warning: Varning")
-    if st.sidebar.button('Radera hela databasen'):
-        delete_feedback_and_reset_dashboard()
+    #if st.sidebar.button('Radera hela databasen'):
+    #    delete_feedback_and_reset_dashboard()
 
     st.sidebar.markdown(
         "####"
@@ -139,7 +139,7 @@ def main():
 
     with topcol1:
 
-        st.title(":material/dashboard: FeedbackFabriken | Dashboard")
+        st.markdown(f"## :material/dashboard: {c.app_name} | Dashboard")
 
     with topcol2:
 
