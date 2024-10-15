@@ -228,78 +228,80 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                     message_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-        st.markdown("#### :material/send: Lämna feedback")
+        with st.container(border=True):
         
-        # Create three tabs for 'Record' and 'Write text'    
-        tab1, tab2 = st.tabs([":material/mic: Tala", ":material/keyboard: Skriv"])
+            st.markdown("#### :material/send: Lämna feedback")
+            
+            # Create three tabs for 'Record' and 'Write text'    
+            tab1, tab2 = st.tabs([":material/mic: Tala", ":material/keyboard: Skriv"])
 
-        # TAB 1 - AUDIO RECORDER
+            # TAB 1 - AUDIO RECORDER
 
-        with tab1:
+            with tab1:
 
-            st.markdown("Klicka på knappen __Spela in__ och prata. När du är klar klickar du på __Stoppa__.")
+                st.markdown("Klicka på knappen __Spela in__ och prata. När du är klar klickar du på __Stoppa__.")
 
-            # Creates the audio recorder
-            audio = audiorecorder(start_prompt="Spela in", stop_prompt="Stoppa", pause_prompt="", key=None)
+                # Creates the audio recorder
+                audio = audiorecorder(start_prompt="Spela in", stop_prompt="Stoppa", pause_prompt="", key=None)
 
-            if len(audio) > 0:
+                if len(audio) > 0:
 
-                audio_file_number = random.randint(1000000, 9000000)
+                    audio_file_number = random.randint(1000000, 9000000)
 
-                # To save audio to a file, use pydub export method
-                audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
+                    # To save audio to a file, use pydub export method
+                    audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
 
-                # Open the saved audio file and compute its hash
-                with open(f"audio/{audio_file_number}_recording.wav", 'rb') as file:
-                    current_file_hash = compute_file_hash(file)
+                    # Open the saved audio file and compute its hash
+                    with open(f"audio/{audio_file_number}_recording.wav", 'rb') as file:
+                        current_file_hash = compute_file_hash(file)
 
-                # If the uploaded file hash is different from the one in session state, reset the state
-                if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
-                    st.session_state.file_hash = current_file_hash
+                    # If the uploaded file hash is different from the one in session state, reset the state
+                    if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
+                        st.session_state.file_hash = current_file_hash
+                        
+                        if "transcribed" in st.session_state:
+                            del st.session_state.transcribed
+
+                    if "transcribed" not in st.session_state:
+
+                        with st.status('Delar upp ljudfilen i mindre bitar...'):
+                            chunk_paths = split_audio_to_chunks(f"audio/{audio_file_number}_recording.wav")
+
+                        # Transcribe chunks in parallel
+                        with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
+                            with ThreadPoolExecutor() as executor:
+                                # Open each chunk as a file object and pass it to transcribe_with_whisper_openai
+                                transcriptions = list(executor.map(
+                                    lambda chunk: transcribe_with_whisper_openai(open(chunk, "rb"), os.path.basename(chunk)), 
+                                    chunk_paths
+                                )) 
+                                # Combine all the transcriptions into one
+                                st.session_state.transcribed = "\n".join(transcriptions)
+
+                    # Delete both the original WAV file and the compressed MP3 file after transcription
+                    original_wav_file = f"audio/{audio_file_number}_recording.wav"
+                    #compressed_mp3_file = st.session_state.file_name_converted
+
+                    if os.path.exists(original_wav_file):
+                        os.remove(original_wav_file)        
                     
-                    if "transcribed" in st.session_state:
-                        del st.session_state.transcribed
-
-                if "transcribed" not in st.session_state:
-
-                    with st.status('Delar upp ljudfilen i mindre bitar...'):
-                        chunk_paths = split_audio_to_chunks(f"audio/{audio_file_number}_recording.wav")
-
-                    # Transcribe chunks in parallel
-                    with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
-                        with ThreadPoolExecutor() as executor:
-                            # Open each chunk as a file object and pass it to transcribe_with_whisper_openai
-                            transcriptions = list(executor.map(
-                                lambda chunk: transcribe_with_whisper_openai(open(chunk, "rb"), os.path.basename(chunk)), 
-                                chunk_paths
-                            )) 
-                            # Combine all the transcriptions into one
-                            st.session_state.transcribed = "\n".join(transcriptions)
-
-                # Delete both the original WAV file and the compressed MP3 file after transcription
-                original_wav_file = f"audio/{audio_file_number}_recording.wav"
-                #compressed_mp3_file = st.session_state.file_name_converted
-
-                if os.path.exists(original_wav_file):
-                    os.remove(original_wav_file)        
-                
-                st.markdown("##### :material/summarize: Du sa:")
-                
-                st.write(st.session_state.transcribed)
+                    st.markdown("##### :material/summarize: Du sa:")
+                    
+                    st.write(st.session_state.transcribed)
 
 
-        # TAB 2 - TEXT INPUT AREA
+            # TAB 2 - TEXT INPUT AREA
 
-        with tab2:
+            with tab2:
 
-            st.markdown("Skriv i det gråa fältet nedan. När du är klar klickar du på __Skicka__.")
+                st.markdown("Skriv i det gråa fältet nedan. När du är klar klickar du på __Skicka__.")
 
-            with st.form("send_feedback"):
-                feedback_text = st.text_area("Feedback", label_visibility="hidden")
-                st.form_submit_button('Skicka')
+                with st.form("send_feedback"):
+                    feedback_text = st.text_area("Feedback", label_visibility="hidden")
+                    st.form_submit_button('Skicka')
 
-                if feedback_text:
-                    st.session_state.transcribed = feedback_text
+                    if feedback_text:
+                        st.session_state.transcribed = feedback_text
             
 
     with maincol2:
