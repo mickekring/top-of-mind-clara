@@ -16,7 +16,7 @@ def page_styling():
     <style>
                 
     h1, h2 {
-        padding: 0rem 0px 2rem;
+        padding: 0rem 0px 1rem;
         font-size: 2.1rem;
     }
 
