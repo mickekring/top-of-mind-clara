@@ -306,60 +306,62 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
 
     with maincol2:
 
-        full_response = ""
+        with st.container(border=True):
 
-        st.markdown("#### :material/summarize: Sammanställning")
+            full_response = ""
 
-        if "transcribed" in st.session_state:
+            st.markdown("#### :material/summarize: Sammanställning")
 
-            if "processed_feedback" not in st.session_state:
+            if "transcribed" in st.session_state:
 
-                system_prompt = p.feedback_prompt_1
-                full_response = ""
+                if "processed_feedback" not in st.session_state:
 
-                butcol1, butcol2, butcol3, butcol4 = st.columns(4, gap="small")
+                    system_prompt = p.feedback_prompt_1
+                    full_response = ""
 
-                with butcol1:
-                    with st.popover("Visa prompt"):
-                        st.write(system_prompt)
+                    butcol1, butcol2, butcol3, butcol4 = st.columns(4, gap="small")
+
+                    with butcol1:
+                        with st.popover("Visa prompt"):
+                            st.write(system_prompt)
+                        
+                    llm_model = st.session_state["llm_chat_model"]
+                    llm_temp = st.session_state["llm_temperature"]
                     
-                llm_model = st.session_state["llm_chat_model"]
-                llm_temp = st.session_state["llm_temperature"]
-                
-                if "llama" in llm_model:
-                    full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
+                    if "llama" in llm_model:
+                        full_response = process_text(llm_model, llm_temp, system_prompt, st.session_state.transcribed)
 
-                else:
-                    full_response = process_text_openai(system_prompt, st.session_state.transcribed)
+                    else:
+                        full_response = process_text_openai(system_prompt, st.session_state.transcribed)
+                    
+                    # Store the processed feedback in session state
+                    st.session_state["processed_feedback"] = full_response
+                    st.session_state["feedback_submitted"] = False
                 
-                # Store the processed feedback in session state
-                st.session_state["processed_feedback"] = full_response
-                st.session_state["feedback_submitted"] = False
-            
+                else:
+                    full_response = st.session_state["processed_feedback"]
+
             else:
-                full_response = st.session_state["processed_feedback"]
+                st.write("När du talat eller skrivit in din feedback kommer du få en sammanställning här...")
+            
 
-        else:
-            st.write("När du talat eller skrivit in din feedback kommer du få en sammanställning här...")
-        
+            # Send result to Supabase database
+            if st.session_state["feedback_submitted"] == False:
+            
+                if st.button('Skicka feedback', type='primary'):
+                    data = {
+                        'dashboard_id': int(dashboard_id),
+                        'processed_text': st.session_state["processed_feedback"]
+                    }
+                    response = supabase.table('feedback').insert(data).execute()
+                    
+                    if response.data:
+                        st.session_state["feedback_submitted"] = True  # Mark feedback as submitted
+                        st.success('Dina tankar är delade med oss nu... Ladda om sidan om du vill skicka in ny feedback.', icon = ":material/thumb_up:")
+                        st.balloons()
 
-        # Send result to Supabase database
-        if st.session_state["feedback_submitted"] == False:
-           
-            if st.button('Skicka feedback', type='primary'):
-                data = {
-                    'dashboard_id': int(dashboard_id),
-                    'processed_text': st.session_state["processed_feedback"]
-                }
-                response = supabase.table('feedback').insert(data).execute()
-                
-                if response.data:
-                    st.session_state["feedback_submitted"] = True  # Mark feedback as submitted
-                    st.success('Dina tankar är delade med oss nu... Ladda om sidan om du vill skicka in ny feedback.', icon = ":material/thumb_up:")
-                    st.balloons()
-
-                else:
-                    st.error(f'Oooops. Nått gick fel: {response.error.message}')
+                    else:
+                        st.error(f'Oooops. Nått gick fel: {response.error.message}')
             
 
 
