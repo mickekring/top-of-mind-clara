@@ -1,6 +1,4 @@
 
-### Transcribe
-
 import streamlit as st
 from openai import OpenAI
 from os import environ
@@ -25,9 +23,5 @@ def transcribe_with_whisper_openai(file, file_name):
 	)
 
 	transcribed_content = transcription
-
-	with open('text/' + file_name + '.txt', 'w') as file:
-		# Write the string to the file
-		file.write(transcribed_content)
 
 	return transcribed_content

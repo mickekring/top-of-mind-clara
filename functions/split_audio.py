@@ -19,7 +19,7 @@ def split_audio_to_chunks(audio_path, max_chunk_length=10*60*1000):
         chunk = audio[start_time:end_time]
         
         # Save the chunk as MP3 (instead of WAV)
-        output_path = f"audio_chunks/output_chunk_{i}.mp3"
+        output_path = f"data/audio/audio_chunks/output_chunk_{i}.mp3"
         chunk.export(output_path, format="mp3", bitrate="16k")
         #print(f"Saved {output_path} as MP3")
         chunk_paths.append(output_path)

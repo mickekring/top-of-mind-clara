@@ -2,8 +2,8 @@
 run_mode = "local" # docker | local
 
 app_name = "Clara"
-app_version = "0.5.3"
-app_updated_date = "2024-10-13"
+app_version = "0.5.4"
+app_updated_date = "2024-10-31"
 app_author = "Micke Kring"
 app_author_email = "mikael.kring@ri.se"
 

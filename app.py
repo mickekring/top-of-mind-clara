@@ -4,7 +4,6 @@
 # External imports
 import streamlit as st
 from openai import OpenAI
-from audiorecorder import audiorecorder
 from supabase import create_client, Client
 
 # Python imports
@@ -18,18 +17,18 @@ import hmac
 from concurrent.futures import ThreadPoolExecutor
 
 # Imternal imports
-from transcribe import transcribe_with_whisper_openai
-from llm import process_text, process_text_openai
+from functions.transcribe import transcribe_with_whisper_openai
+from functions.llm import process_text, process_text_openai
+from functions.styling_css import page_config, page_styling
+from functions.split_audio import split_audio_to_chunks
 import prompts as p
 import config as c
-from styling_css import page_config, page_styling
-from split_audio import split_audio_to_chunks
 
 
 ### INITIAL VARIABLES
-os.makedirs("audio", exist_ok=True)
-os.makedirs("audio_chunks", exist_ok=True)
-os.makedirs("text", exist_ok=True)
+os.makedirs("data/audio", exist_ok=True)
+os.makedirs("data/audio/audio_chunks", exist_ok=True)
+
 
 # Initialize Supabase client
 if c.run_mode == "local":
@@ -239,21 +238,14 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
 
             with tab1:
 
-                st.markdown("Klicka på knappen __Spela in__ och prata. När du är klar klickar du på __Stoppa__.")
+                st.markdown("Klicka på __mikrofonikonen__ och prata. När du är klar klickar du på __stoppikonen__.")
 
-                # Creates the audio recorder
-                audio = audiorecorder(start_prompt="Spela in", stop_prompt="Stoppa", pause_prompt="", key=None)
+                audio = st.experimental_audio_input("Record a voice message", label_visibility = "collapsed")
 
-                if len(audio) > 0:
+                if audio:
 
                     audio_file_number = random.randint(1000000, 9000000)
-
-                    # To save audio to a file, use pydub export method
-                    audio.export(f"audio/{audio_file_number}_recording.wav", format="wav")
-
-                    # Open the saved audio file and compute its hash
-                    with open(f"audio/{audio_file_number}_recording.wav", 'rb') as file:
-                        current_file_hash = compute_file_hash(file)
+                    current_file_hash = compute_file_hash(audio)
 
                     # If the uploaded file hash is different from the one in session state, reset the state
                     if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
@@ -265,7 +257,7 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                     if "transcribed" not in st.session_state:
 
                         with st.status('Delar upp ljudfilen i mindre bitar...'):
-                            chunk_paths = split_audio_to_chunks(f"audio/{audio_file_number}_recording.wav")
+                            chunk_paths = split_audio_to_chunks(audio)
 
                         # Transcribe chunks in parallel
                         with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
@@ -277,10 +269,6 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                                 )) 
                                 # Combine all the transcriptions into one
                                 st.session_state.transcribed = "\n".join(transcriptions)
-
-                    # Delete both the original WAV file and the compressed MP3 file after transcription
-                    original_wav_file = f"audio/{audio_file_number}_recording.wav"
-                    #compressed_mp3_file = st.session_state.file_name_converted
 
                     if os.path.exists(original_wav_file):
                         os.remove(original_wav_file)        
@@ -294,7 +282,7 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
 
             with tab2:
 
-                st.markdown("Skriv i det gråa fältet nedan. När du är klar klickar du på __Skicka__.")
+                st.markdown("Skriv i det grå fältet nedan. När du är klar klickar du på __Skicka__.")
 
                 with st.form("send_feedback"):
                     feedback_text = st.text_area("Feedback", label_visibility="hidden")

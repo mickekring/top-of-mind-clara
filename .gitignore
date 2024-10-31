@@ -2,9 +2,8 @@
 .DS_Store
 .streamlit/secrets.toml
 Dockerfile
-/__pycache__
-/audio/*.wav
-/static
-/text/out*
-/audio_chunks/out*
+__pycache__
+data/*
+images/*
+
 
