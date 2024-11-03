@@ -1,7 +1,22 @@
-# FeedbackFabriken
+# Clara
 
-### Vad?
-Text text
+Clara är av flera prototyper som togs fram inom projektet "Top of Mind: Jämställdhet i industrins vardag".
+Projektets sida hittar du på https://www.ri.se/sv/vad-vi-gor/projekt/top-of-mind-jamstalldhet-i-industrins-vardag
+
+## Bakgrund
+**Att våga göra sin röst hörd och säga det man tycker, eller att säga ifrån, är svårt. Det kan handla om allt från att någon beter 
+sig illa, till att man upplever orättvisor och ojämställdhet på sin arbetsplats. Men det kan också handla om idéer och förslag som skulle 
+kunna göra arbetsplatsen bättre.**  
+
+Clara är en prototyp som möjliggör att anonymt kunna göra sin röst hörd. Medarbetaren kan prata eller skriva in det du vill säga och AI anonymiserar det.
+Medarbetaren har dessutom tillgång till en chatbot att rådfråga.  
+Därefter analyseras och sammanställs alla medarbetares tankar i en dashboard, som exempelvis chefer och/eller HR skulle kunna ha tillgång till. Clara delar upp 
+medarbetarnas röster i kategorierna 'Ledarskap', 'Arbetsmiljö', 'Jämställdhet', 'Övrigt' och 'Idéer'. AI hjälper dessutom till att ta fram rekommendationer 
+kring kategorierna.  
+
+## Hur funkar det?
+
+
 
 ### Kort teknisk beskrivning
 En Python Streamlit-applikation med en sida för att ge feedback och en sida med en dashboard där statistik genereras utifrån feedback.  
