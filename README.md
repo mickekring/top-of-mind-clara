@@ -33,9 +33,7 @@ create table admin_dashboard (
 
 
 
-##
-
-Feedback table
+## Feedback table
 
 create table feedback (
   id serial primary key,
