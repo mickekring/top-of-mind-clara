@@ -36,6 +36,39 @@ else:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+st.session_state["pwd_on"] = st.secrets.pwd_on
+
+### PASSWORD
+
+if st.session_state["pwd_on"] == "true":
+
+    def check_password():
+
+        passwd = st.secrets["password"]
+
+        def password_entered():
+
+            if hmac.compare_digest(st.session_state["password"], passwd):
+                st.session_state["password_correct"] = True
+                del st.session_state["password"]  # Don't store the password.
+            else:
+                st.session_state["password_correct"] = False
+
+        if st.session_state.get("password_correct", False):
+            return True
+
+        st.text_input("Lösenord", type="password", on_change=password_entered, key="password")
+        if "password_correct" in st.session_state:
+            st.error("😕 Ooops. Fel lösenord.")
+        return False
+
+
+    if not check_password():
+        st.stop()
+
+### ### ###
+
+
 ### STYLING - PAGE CONFIG
 page_config()
 page_styling()
