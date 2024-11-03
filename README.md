@@ -53,6 +53,9 @@ supabase_db_api = "abc123"
 ```
 
 ### Supabase databas
+Sätt upp en databas i Supabase och använd SQL härunder. Det skapas två tabeller, en för dashboarden och en för feedbacken.  
+Skapa en rad i dashbordtabellen med dashboard_id satt till 7530, samma som du hittar i filen config.py. Du kan givetvis ändra detta, 
+men se då till att både databasen och config.py har samma id.
 
 ```
 ## Admin Dashboard Table
@@ -75,8 +78,6 @@ create table admin_dashboard (
   summarize_misc_recommendation text
 );
 
-
-
 ## Feedback table
 
 create table feedback (
@@ -88,8 +89,15 @@ create table feedback (
 );
 ```
 
-### Juridisk information
-Den här applikationen är inte GDPR-säkrad. Den är en del av ett utforskande och ska ses som en POC - proof of concept.
+## Lokal installation
+Ladda ned kod och lägg till filen /.streamlit/secrets.toml ddär du lägger in hemlligheterna som API-nycklar som ovan.  
+Kör appen genom 
+```
+streamlit run app.py
+```
+
+## Juridisk information
+Den här applikationen är inte GDPR-säkrad. Den är en del av ett utforskande och ska ses som en PoC - proof of concept.
 
 ## Vad får jag göra med koden?
 Du är fri att göra vad du vill med den. Inspireras, koda om, förbättra och sprid vidare... :)
