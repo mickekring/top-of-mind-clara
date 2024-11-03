@@ -16,9 +16,9 @@ from datetime import datetime, date
 
 # Internal imports
 
-from llm import process_text_openai_recommendation, stream_text_openai, process_text_openai_image_prompt
-from image import download_image, create_image
-from styling_css import page_config, page_styling_dashboard
+from functions.llm import process_text_openai_recommendation, stream_text_openai, process_text_openai_image_prompt
+from functions.image import download_image, create_image
+from functions.styling_css import page_config, page_styling
 import config as c
 import prompts as p
 
@@ -38,7 +38,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 ### STYLING - PAGE CONFIG
 page_config()
-page_styling_dashboard()
+page_styling()
 
 
 ### SESSION STATES
@@ -78,9 +78,6 @@ def main():
 
     st.sidebar.markdown("# ")
     st.sidebar.markdown("# ")
-    st.sidebar.markdown("# ")
-    st.sidebar.markdown("## :material/settings: Inställningar")
-    st.sidebar.divider()
 
     # Reset session state on page load
     if "dashboard_id" not in st.session_state:
@@ -119,8 +116,8 @@ def main():
 
     # Add a button for deletion and reset
     st.sidebar.markdown("### :material/warning: Varning")
-    #if st.sidebar.button('Radera hela databasen'):
-    #    delete_feedback_and_reset_dashboard()
+    if st.sidebar.button('Radera hela databasen'):
+        delete_feedback_and_reset_dashboard()
 
     st.sidebar.markdown(
         "####"
@@ -301,8 +298,7 @@ def main():
             container_summarize_ideas = st.empty()
 
             if 'summarize_ideas' in st.session_state:
-                container_summarize_ideas.markdown(st.session_state.summarize_ideas)
-        
+                container_summarize_ideas.markdown(st.session_state.summarize_ideas) 
             
 
     
@@ -320,7 +316,7 @@ def main():
                     {
                     border: 0px solid rgba(255, 255, 255, 0.2);
                     background: rgb(17,77,110);
-                    background: linear-gradient(90deg, rgb(240 240 240) 0%, rgb(245 243 243) 100%);
+                    background: linear-gradient(124deg, rgb(24 24 24) 0%, rgb(37 37 37) 100%);
                     border-radius: 8px;
                     padding: 1rem 1rem 1rem 1rem;                                       
                     }
@@ -338,7 +334,7 @@ def main():
                     {
                     border: 0px solid rgba(255, 255, 255, 0.2);
                     background: rgb(17,77,110);
-                    background: linear-gradient(90deg, rgb(240 240 240) 0%, rgb(245 243 243) 100%);
+                    background: linear-gradient(124deg, rgb(24 24 24) 0%, rgb(37 37 37) 100%);
                     border-radius: 8px;
                     padding: 1rem 1rem 1rem 1rem;                                       
                     }
@@ -351,7 +347,7 @@ def main():
         with stylable_container(key = "column-3", css_styles = """
                 {
                 border: 0px solid rgba(255, 255, 255, 0.2);
-                background: linear-gradient(90deg, rgb(240 240 240) 0%, rgb(245 243 243) 100%);
+                background: linear-gradient(124deg, rgb(24 24 24) 0%, rgb(37 37 37) 100%);
                 border-radius: 8px;
                 padding: 1rem 1rem 1rem 1rem;                                       
                 }"""):

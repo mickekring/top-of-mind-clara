@@ -58,9 +58,9 @@ if "spoken_language" not in st.session_state: # What language source audio is in
 if "file_name_converted" not in st.session_state: # Audio file name
     st.session_state["file_name_converted"] = None
 if "llm_temperature" not in st.session_state:
-    st.session_state["llm_temperature"] = 0.8
+    st.session_state["llm_temperature"] = c.llm_temperature
 if "llm_chat_model" not in st.session_state:
-    st.session_state["llm_chat_model"] = "gpt-4o"
+    st.session_state["llm_chat_model"] = c.llm_model
 if "audio_file" not in st.session_state:
     st.session_state["audio_file"] = False
 if "feedback_submitted" not in st.session_state:
@@ -96,16 +96,16 @@ def main():
 
     # MENU
 
-    st.sidebar.markdown(f"## {c.app_name}")
+    st.sidebar.markdown(f"# {c.app_name}")
 
     st.sidebar.page_link("app.py", label="Feedback", icon=":material/home:")
     st.sidebar.page_link("pages/10Dashboard.py", label="Dashboard", icon=":material/dashboard:")
 
     st.sidebar.markdown("# ")
     st.sidebar.markdown("# ")
-    st.sidebar.markdown("# ")
     st.sidebar.markdown("### :material/settings: Inställningar")
     st.sidebar.markdown("")
+
 
     # Dropdown menu - choose source language of audio for Whisper model
     spoken_language = st.sidebar.selectbox(
@@ -140,15 +140,15 @@ def main():
     ### MAIN PAGE
     
     # Creating two main top columns for header with title
-    topcol1, topcol2 = st.columns([2, 2], gap="small")
+    topcol1, topcol2 = st.columns([2, 2], gap = "medium")
 
     with topcol1:
 
-        st.markdown(f"## :material/dashboard: {c.app_name}")
+        st.markdown(f"## :material/dashboard: {c.app_name} | Feedback")
               
 
     # Creating two main columns
-    maincol1, maincol2 = st.columns([2, 2], gap="medium")
+    maincol1, maincol2 = st.columns([2, 2], gap="large")
 
     
     with maincol1:
@@ -168,18 +168,21 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
         
         with st.expander(":material/forum: Chatta med Clara"):
 
-            chat = st.container(height=400, border=False)
+            chat = st.container(height = 400, border = False)
 
             if st.button("Rensa chat", type="secondary"):
                 if "messages" in st.session_state.keys(): # Initialize the chat message history
                     st.session_state.messages = [
-                        {"role": "assistant", "content": '''
+                        {"role": "assistant", "content": """
                             Hej! Jag är Clara, en AI-chatbot. Hur kan jag hjälpa dig?
-                        '''}
+                        """}
                 ]
 
             if "messages" not in st.session_state:
-                st.session_state["messages"] = [{"role": "assistant", "content": "Hej! Jag är Clara, en AI-chatbot. Hur kan jag hjälpa dig?"}]
+                st.session_state["messages"] = [{"role": "assistant", "content": 
+                            """Hej! Jag är Clara, en AI-chatbot. Hur kan jag hjälpa dig?
+                            """}
+                ]
 
             for message in st.session_state.messages:
                 with chat.chat_message(message["role"]):
@@ -227,69 +230,67 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                     message_placeholder.markdown(full_response)
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-        with st.container(border=True):
         
-            st.markdown("#### :material/send: Lämna feedback")
-            
-            # Create three tabs for 'Record' and 'Write text'    
-            tab1, tab2 = st.tabs([":material/mic: Tala", ":material/keyboard: Skriv"])
+        st.markdown("#### :material/dashboard: Lämna feedback")
+        
+        # Create two tabs for 'Record' and 'Write text'    
+        tab1, tab2 = st.tabs(["Tala", "Skriv"])
 
-            # TAB 1 - AUDIO RECORDER
+        # TAB 1 - AUDIO RECORDER
 
-            with tab1:
+        with tab1:
 
-                st.markdown("Klicka på __mikrofonikonen__ och prata. När du är klar klickar du på __stoppikonen__.")
+            st.markdown("Klicka på __mikrofonikonen__ och prata. När du är klar klickar du på __stoppikonen__.")
 
-                audio = st.experimental_audio_input("Record a voice message", label_visibility = "collapsed")
+            audio = st.experimental_audio_input("Record a voice message", label_visibility = "collapsed")
 
-                if audio:
+            if audio:
 
-                    audio_file_number = random.randint(1000000, 9000000)
-                    current_file_hash = compute_file_hash(audio)
+                audio_file_number = random.randint(1000000, 9000000)
+                current_file_hash = compute_file_hash(audio)
 
-                    # If the uploaded file hash is different from the one in session state, reset the state
-                    if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
-                        st.session_state.file_hash = current_file_hash
-                        
-                        if "transcribed" in st.session_state:
-                            del st.session_state.transcribed
-
-                    if "transcribed" not in st.session_state:
-
-                        with st.status('Delar upp ljudfilen i mindre bitar...'):
-                            chunk_paths = split_audio_to_chunks(audio)
-
-                        # Transcribe chunks in parallel
-                        with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
-                            with ThreadPoolExecutor() as executor:
-                                # Open each chunk as a file object and pass it to transcribe_with_whisper_openai
-                                transcriptions = list(executor.map(
-                                    lambda chunk: transcribe_with_whisper_openai(open(chunk, "rb"), os.path.basename(chunk)), 
-                                    chunk_paths
-                                )) 
-                                # Combine all the transcriptions into one
-                                st.session_state.transcribed = "\n".join(transcriptions)
-
-                    if os.path.exists(original_wav_file):
-                        os.remove(original_wav_file)        
+                # If the uploaded file hash is different from the one in session state, reset the state
+                if "file_hash" not in st.session_state or st.session_state.file_hash != current_file_hash:
+                    st.session_state.file_hash = current_file_hash
                     
-                    st.markdown("##### :material/summarize: Du sa:")
-                    
+                    if "transcribed" in st.session_state:
+                        del st.session_state.transcribed
+
+                if "transcribed" not in st.session_state:
+
+                    with st.status('Delar upp ljudfilen i mindre bitar...'):
+                        chunk_paths = split_audio_to_chunks(audio_file_number, audio)
+
+                    # Transcribe chunks in parallel
+                    with st.status('Transkriberar alla ljudbitar. Det här kan ta ett tag beroende på lång inspelningen är...'):
+                        with ThreadPoolExecutor() as executor:
+                            # Open each chunk as a file object and pass it to transcribe_with_whisper_openai
+                            transcriptions = list(executor.map(
+                                lambda chunk: transcribe_with_whisper_openai(open(chunk, "rb"), os.path.basename(chunk)), 
+                                chunk_paths
+                            )) 
+                            # Combine all the transcriptions into one
+                            st.session_state.transcribed = "\n".join(transcriptions)
+    
+                
+                with st.container(border = True):
+                
+                    st.markdown("##### :material/summarize: Du sa:")        
                     st.write(st.session_state.transcribed)
 
 
-            # TAB 2 - TEXT INPUT AREA
+        # TAB 2 - TEXT INPUT AREA
 
-            with tab2:
+        with tab2:
 
-                st.markdown("Skriv i det grå fältet nedan. När du är klar klickar du på __Skicka__.")
+            st.markdown("Skriv i det grå fältet nedan. När du är klar klickar du på __Skicka__.")
 
-                with st.form("send_feedback"):
-                    feedback_text = st.text_area("Feedback", label_visibility="hidden")
-                    st.form_submit_button('Skicka')
+            with st.form("send_feedback"):
+                feedback_text = st.text_area("Feedback", label_visibility="collapsed")
+                st.form_submit_button(':material/send: Skicka')
 
-                    if feedback_text:
-                        st.session_state.transcribed = feedback_text
+                if feedback_text:
+                    st.session_state.transcribed = feedback_text
             
 
     with maincol2:

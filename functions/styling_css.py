@@ -16,98 +16,30 @@ def page_styling():
     <style>
                 
     h1, h2 {
-        padding: 0rem 0px 1rem;
-        font-size: 2.1rem;
-    }
-
-    img {
-    border-radius: 8px;
-    border: 1px solid #dadada;
-    }
-                
-    [data-baseweb="tab"] {
-    background: #ededed;
-    padding-left: 24px;
-    padding-right: 28px;
-    border-radius: 8px;
-    }
-                
-    [data-baseweb="tab-highlight"] {
-    display: none;
-    }
-                
-    .st-bz:focus {
-    color: #fff;
-    background: #5bbf83 !important;
-    }
-                
-    .st-bd {
-    color: #ffffff;
-    background: #5bbf83 !important;
-    }
-                
-    [data-baseweb="chackbox"] {
-    height: 0rem;
-    }
-                
-    [data-baseweb="tab-border"] {
-    display: none;
-    }        
-                
-    [aria-roledescription="Calendar month"] {
-        background: #fbfbfb;
-    }           
-                
-    .block-container {
-        padding-top: 3rem;
-        padding-bottom: 2rem;
-    }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-
-def page_styling_dashboard():
-    st.markdown("""
-    <style>
-                
-    h1, h2 {
         padding: 0rem 0px 2rem;
         font-size: 2.1rem;
+    }            
+    
+    [aria-label="do_not_disturb_on icon"] {
+    color: #ef7f5e !important;
+    }
+                
+    [aria-label="add_circle icon"] {
+    color: #5BBF83 !important;
+    }
+                
+    [aria-label="stars icon"] {
+    color: #e0dd83 !important;
     }
 
     img {
     border-radius: 8px;
-    border: 1px solid #dadada;
+    border: 0px solid #dadada;
     }
-                
-    [data-baseweb="tab"] {
-    background: #ededed;
-    padding-left: 24px;
-    padding-right: 28px;
-    border-radius: 8px;
-    }
-                
-    [data-baseweb="tab-highlight"] {
-    display: none;
-    }
-                
-    .st-bz:focus {
-    color: #fff;
-    background: #5bbf83 !important;
-    }
-                
-    [data-baseweb="chackbox"] {
-    height: 0rem;
-    }           
     
     [data-baseweb="tab-border"] {
     display: none;
-    }           
-                
-    [aria-roledescription="Calendar month"] {
-        background: #fbfbfb;
-    }           
+    }                   
                 
     .block-container {
         padding-top: 3rem;

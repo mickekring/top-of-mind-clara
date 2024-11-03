@@ -55,27 +55,27 @@ def process_text_openai(system_prompt, text):
     else:
         client = OpenAI(api_key = environ.get("openai_key"))
     
-    with st.container(border = True):
+    with st.container(border = False):
 
-            message_placeholder = st.empty()
-            full_response = ""
+        message_placeholder = st.empty()
+        full_response = ""
 
-            for response in client.chat.completions.create(
-                model = c.llm_model,
-                temperature = c.llm_temperature,
-                messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text}
-                ],
-                stream=True,
-                ):
-                    if response.choices[0].delta.content:
-                        full_response += str(response.choices[0].delta.content)
-                    message_placeholder.markdown(full_response + "▌") 
-                    
-            message_placeholder.markdown(full_response)
-            
-            return full_response
+        for response in client.chat.completions.create(
+            model = c.llm_model,
+            temperature = c.llm_temperature,
+            messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+            ],
+            stream=True,
+            ):
+                if response.choices[0].delta.content:
+                    full_response += str(response.choices[0].delta.content)
+                message_placeholder.markdown(full_response + "▌") 
+                
+        message_placeholder.markdown(full_response)
+        
+        return full_response
     
 
 def process_text_openai_recommendation(system_prompt, text):
@@ -87,25 +87,25 @@ def process_text_openai_recommendation(system_prompt, text):
     
     with st.container(border = True):
 
-            message_placeholder = st.empty()
-            full_response = ""
+        message_placeholder = st.empty()
+        full_response = ""
 
-            for response in client.chat.completions.create(
-                model = c.llm_model,
-                temperature = c.llm_temperature,
-                messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text}
-                ],
-                stream=True,
-                ):
-                    if response.choices[0].delta.content:
-                        full_response += str(response.choices[0].delta.content)
-                    message_placeholder.markdown(full_response + "▌") 
-                    
-            message_placeholder.markdown(full_response)
-            
-            return full_response
+        for response in client.chat.completions.create(
+            model = c.llm_model,
+            temperature = c.llm_temperature,
+            messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": text}
+            ],
+            stream=True,
+            ):
+                if response.choices[0].delta.content:
+                    full_response += str(response.choices[0].delta.content)
+                message_placeholder.markdown(full_response + "▌") 
+                
+        message_placeholder.markdown(full_response)
+        
+        return full_response
     
 
 def stream_text_openai(system_prompt, text, container):
