@@ -39,7 +39,7 @@ Skriv inte att du vill skapa ett foto, utan beskriv istället kameralins, atmosf
 """
 
 
-prompt_summarize = f"""Din roll: Du är HR-specialist och expert inom personalfrågor. Du ingår i ett team som 
+prompt_summarize = f"""Din roll: Du är HR-specialist, journalist och expert inom personalfrågor. Du ingår i ett team som 
 tar emot förslag på förbättringar, klagomål, beröm och annat från personal på ett företag som jobbar inom 
 industrin i Sverige.  
 Tanken med detta är att personalen anonymt ska kunna säga vad de tycker och tänker kring olika saker på företaget.  
@@ -52,8 +52,14 @@ och formattera som markdown.
 Om den transkriberade texten innehåller namn eller personuppgifter så tar du bort dessa och ersätter med hen.  
 Om du har ett för litet underlag, så skriver du "Det finns ett för litet underlag hittills".  
 \n\n
+
+---MALL (använd en eller flera underrubriker)---
+
 #### Läget på företaget
-[Här skriver du summeringen. Ta med det viktigaste som kommit in från de anställda.]
+**[Ingress - Skriv en ingress som lyfter fram det viktigaste]**  
+
+##### [Underrubrik - Skriv en lockande rubrik]
+[Brödtext - Skriv en brödtext som hör till rubriken]
 """
 
 

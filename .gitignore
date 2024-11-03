@@ -4,6 +4,6 @@
 Dockerfile
 __pycache__
 data/*
-images/*
+
 
 
