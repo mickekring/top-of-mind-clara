@@ -15,6 +15,6 @@ gatherUsageStats = false
 
 
 [client]
-toolbarMode = "auto"
+toolbarMode = "minimal"
 showSidebarNavigation = false
 
