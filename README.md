@@ -8,6 +8,8 @@ Projektets sida hittar du på https://www.ri.se/sv/vad-vi-gor/projekt/top-of-min
 sig illa, till att man upplever orättvisor och ojämställdhet på sin arbetsplats. Men det kan också handla om idéer och förslag som skulle 
 kunna göra arbetsplatsen bättre.**  
 
+[>> Se youtubeklipp som visar prototypen](https://youtu.be/LhGSV4-qvJs)
+
 Clara är en prototyp som möjliggör att anonymt kunna göra sin röst hörd. Medarbetaren kan prata eller skriva in det du vill säga och AI anonymiserar det.
 Medarbetaren har dessutom tillgång till en chatbot att rådfråga.  
 Därefter analyseras och sammanställs alla medarbetares tankar i en dashboard, som exempelvis chefer och/eller HR skulle kunna ha tillgång till. Clara delar upp 
