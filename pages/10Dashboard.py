@@ -26,7 +26,7 @@ import prompts as p
 ### INITIAL VARIABLES
 
 # Initialize Supabase client
-if c.run_mode == "local":
+if c.run_mode == "streamlit":
     SUPABASE_URL = st.secrets.supabase_db_url
     SUPABASE_KEY = st.secrets.supabase_db_api
 else:
@@ -36,7 +36,10 @@ else:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-st.session_state["pwd_on"] = st.secrets.pwd_on
+if c.run_mode == "streamlit":
+    st.session_state["pwd_on"] = st.secrets.pwd_on
+else:
+    st.session_state["pwd_on"] = environ.get("pwd_on")
 
 ### PASSWORD
 
@@ -44,7 +47,10 @@ if st.session_state["pwd_on"] == "true":
 
     def check_password():
 
-        passwd = st.secrets["password"]
+        if c.run_mode == "streamlit":
+            passwd = st.secrets["password"]
+        else:
+            passwd = environ.get("password")
 
         def password_entered():
 
@@ -66,7 +72,7 @@ if st.session_state["pwd_on"] == "true":
     if not check_password():
         st.stop()
 
-### ### ###
+############
 
 
 ### STYLING - PAGE CONFIG

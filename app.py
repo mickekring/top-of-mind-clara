@@ -284,7 +284,7 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
 
             st.markdown("Klicka på __mikrofonikonen__ och prata. När du är klar klickar du på __stoppikonen__.")
 
-            audio = st.experimental_audio_input("Record a voice message", label_visibility = "collapsed")
+            audio = st.audio_input("Record a voice message", label_visibility = "collapsed")
 
             if audio:
 

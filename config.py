@@ -2,7 +2,7 @@
 run_mode = "docker" # docker | streamlit
 
 app_name = "Clara"
-app_version = "1.0.2"
+app_version = "1.0.3"
 app_updated_date = "2025-03-01"
 app_author = "Micke Kring"
 app_author_email = "mikael.kring@ri.se"
