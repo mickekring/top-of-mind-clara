@@ -30,7 +30,7 @@ def create_image(prompt, container):
 
     message_placeholder = container.empty()
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = OpenAI(api_key = st.secrets.openai_key)
     else:
         client = OpenAI(api_key = environ.get("openai_key"))

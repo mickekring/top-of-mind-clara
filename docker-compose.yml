@@ -1,0 +1,19 @@
+services:
+  top-of-mind-clara:
+    build: .
+    container_name: top-of-mind-clara
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.top-of-mind-clara.rule=Host(`top-of-mind-clara.labbytan.se`)"
+      - "traefik.http.routers.top-of-mind-clara.entrypoints=websecure"
+      - "traefik.http.routers.top-of-mind-clara.tls.certresolver=myresolver"
+      - "traefik.http.services.top-of-mind-clara.loadbalancer.server.port=8501"
+
+networks:
+  web:
+    external: true

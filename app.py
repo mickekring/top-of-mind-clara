@@ -31,7 +31,7 @@ os.makedirs("data/audio/audio_chunks", exist_ok=True)
 
 
 # Initialize Supabase client
-if c.run_mode == "local":
+if c.run_mode == "streamlit":
     SUPABASE_URL = st.secrets.supabase_db_url
     SUPABASE_KEY = st.secrets.supabase_db_api
 else:
@@ -49,7 +49,10 @@ page_config()
 page_styling()
 
 
-st.session_state["pwd_on"] = st.secrets.pwd_on
+if c.run_mode == "streamlit":
+    st.session_state["pwd_on"] = st.secrets.pwd_on
+else:
+    st.session_state["pwd_on"] = environ.get("pwd_on")
 
 ### PASSWORD
 
@@ -57,7 +60,10 @@ if st.session_state["pwd_on"] == "true":
 
     def check_password():
 
-        passwd = st.secrets["password"]
+        if c.run_mode == "streamlit":
+            passwd = st.secrets["password"]
+        else:
+            passwd = environ.get("password")
 
         def password_entered():
 
@@ -79,7 +85,7 @@ if st.session_state["pwd_on"] == "true":
     if not check_password():
         st.stop()
 
-### ### ###
+############
 
 
 ### INITIAL SESSION STATE
@@ -248,7 +254,10 @@ förslag på hur det skulle kunna lösas. Du som jobbar närmast problemet, vet 
                         else:
                             processed_messages.append(m)
 
-                    client = OpenAI(api_key = st.secrets.openai_key)
+                    if c.run_mode == "streamlit":
+                        client = OpenAI(api_key = st.secrets.openai_key)
+                    else:
+                        client = OpenAI(api_key = environ.get("openai_key"))
             
                     for response in client.chat.completions.create(
                         model = st.session_state["llm_chat_model"],

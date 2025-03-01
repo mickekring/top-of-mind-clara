@@ -14,7 +14,7 @@ import config as c
 
 def process_text(system_prompt, text):
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = Groq(api_key = st.secrets.groq_key)
     else:
         client = Groq(api_key = environ.get("groq_key"))
@@ -50,7 +50,7 @@ def process_text(system_prompt, text):
 
 def process_text_openai(system_prompt, text):
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = OpenAI(api_key = st.secrets.openai_key)
     else:
         client = OpenAI(api_key = environ.get("openai_key"))
@@ -80,7 +80,7 @@ def process_text_openai(system_prompt, text):
 
 def process_text_openai_recommendation(system_prompt, text):
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = OpenAI(api_key = st.secrets.openai_key)
     else:
         client = OpenAI(api_key = environ.get("openai_key"))
@@ -110,7 +110,7 @@ def process_text_openai_recommendation(system_prompt, text):
 
 def stream_text_openai(system_prompt, text, container):
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = OpenAI(api_key=st.secrets.openai_key)
     else:
         client = OpenAI(api_key=environ.get("openai_key"))
@@ -140,7 +140,7 @@ def stream_text_openai(system_prompt, text, container):
 
 def process_text_openai_image_prompt(system_prompt, text, container):
 
-    if c.run_mode == "local":
+    if c.run_mode == "streamlit":
         client = OpenAI(api_key = st.secrets.openai_key)
     else:
         client = OpenAI(api_key = environ.get("openai_key"))

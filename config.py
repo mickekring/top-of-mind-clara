@@ -1,9 +1,9 @@
 
-run_mode = "local" # docker | local
+run_mode = "docker" # docker | streamlit
 
 app_name = "Clara"
-app_version = "1.0.1"
-app_updated_date = "2024-11-03"
+app_version = "1.0.2"
+app_updated_date = "2025-03-01"
 app_author = "Micke Kring"
 app_author_email = "mikael.kring@ri.se"
 
